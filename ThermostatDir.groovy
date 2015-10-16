@@ -1,7 +1,7 @@
 /**
  *  Enhanced Thermostat Director
  *
- *  Copyright 2015 Tim Slagle
+ *  Copyright 2015 Tim Slagle/Bobby Dobrescu
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -19,7 +19,7 @@ definition(
 	name: "Enhanced Thermostat Director",
 	namespace: "tslagle13",
 	author: "Tim Slagle",
-	description: "Changes settings of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open.",
+	description: "Changes mode of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open.",
 	category: "Green Living",
 	iconUrl: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png",
 	iconX2Url: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png"
@@ -48,7 +48,7 @@ def pageSetup() {
 
 	return dynamicPage(pageProperties) {
     	section("About 'Thermostat Director'"){
-        	paragraph "Changes mode of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open."
+        	paragraph "Changes settings of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open."
         }
         section("Setup Menu") {
             href "directorSettings", title: "Director Settings", description: "", state:greyedOut()
@@ -141,7 +141,7 @@ def directorSettings() {
         name:       "fan",
         type:       "enum",
         title:		"Fan mode?",
-        metadata:   [values:["fanauto", "fanon", "fancirculate"]],
+        metadata:   [values:["fanAuto", "fanOn", "fanCirculate"]],
         required:   false
     ]
 
@@ -356,7 +356,7 @@ def ThermostatAway() {
         name:       "fanAway",
         type:       "enum",
         title:		"Fan mode?",
-        metadata:   [values:["fanauto", "fanon", "fancirculate"]],
+        metadata:   [values:["fanAuto", "fanOn", "fanCirculate"]],
         required: 	false
     ]
 
@@ -489,7 +489,7 @@ def temperatureHandler(evt) {
 			if (currentTemp < setLow) {
             	if (state.lastStatus == "two" || state.lastStatus == "three" || state.lastStatus == null){
 					//log.info "Setting thermostat mode to ${cold}"
-					def msg = "I changed your thermostat mode to ${cold} because temperature is below ${setLow}"
+					def msg = "I changed your ${thermostat} mode to ${cold} because temperature is below ${setLow}"
 					thermostat?."${cold}"()
                     thermostat?.setHeatingSetpoint(SetHeatingLow)
                     thermostat?.setCoolingSetpoint(SetCoolingLow)
@@ -501,7 +501,7 @@ def temperatureHandler(evt) {
 			if (currentTemp > setHigh) {
             	if (state.lastStatus == "one" || state.lastStatus == "three" || state.lastStatus == null){
 					//log.info "Setting thermostat mode to ${hot}"
-					def msg = "I changed your thermostat mode to ${hot} because temperature is above ${setHigh}"
+					def msg = "I changed your ${thermostat} mode to ${hot} because temperature is above ${setHigh}"
 					thermostat?."${hot}"()
                     thermostat?.setHeatingSetpoint(SetHeatingHigh)
                     thermostat?.setCoolingSetpoint(SetCoolingHigh)
@@ -513,9 +513,9 @@ def temperatureHandler(evt) {
 			if (currentTemp > setLow && currentTemp < setHigh) {
             	if (state.lastStatus == "two" || state.lastStatus == "one" || state.lastStatus == null){
 					//log.info "Setting thermostat mode to ${neutral}"
-					def msg = "I changed your thermostat mode to ${neutral} because temperature is neutral"
+					def msg = "I changed your ${thermostat} mode to ${neutral} because temperature is neutral"
 					thermostat?."${neutral}"()
-                    thermostat?.thermostatFanMode(fan)
+                    thermostat?.setThermostatFanMode(fan)
 					sendMessage(msg)
 				}
 				state.lastStatus = "three"
@@ -582,8 +582,8 @@ def modeAwayChange(evt) {
           	thermostat2."${away}"()             
             thermostat2.setHeatingSetpoint(SetHeatingAway)
             thermostat2.setCoolingSetpoint(SetCoolingAway)
-			thermostat2.thermostatFanMode(fanAway)
-            def msg = "I changed your thermostat mode to ${away} because Home Mode is ${mode2}"   
+			thermostat2.setThermostatFanMode(fanAway)
+            def msg = "I changed your ${thermostat2} mode to ${away} because Home Mode is ${mode2}"   
 			sendMessage(msg)
 	}  
 }
@@ -619,7 +619,7 @@ def thermoShutOff(){
 def doorCheck(evt){
 	if (!doorsOk){
 		log.debug("doors still open turning off ${thermostat}")
-		def msg = "I changed your thermostat mode to off because some doors are open"
+		def msg = "I changed your ${thermostat} mode to off because some doors are open"
 		
         if (state.lastStatus != "off"){
         	thermostat?.off()
