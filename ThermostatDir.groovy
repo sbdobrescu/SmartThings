@@ -1,7 +1,7 @@
 /**
  *  Enhanced Thermostat Director
  *
- *  Copyright 2015 Tim Slagle/Bobby Dobrescu
+ *  Copyright 2015 Tim Slagle
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
