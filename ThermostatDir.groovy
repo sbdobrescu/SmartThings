@@ -1,7 +1,7 @@
 /**
- *  Thermostat Mode Director
+ *  Enhanced Thermostat Director
  *
- *  Copyright 2015 Tim Slagle
+ *  Copyright 2015 Tim Slagle/Bobby Dobrescu
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -16,10 +16,10 @@
 
 // Automatically generated. Make future change here.
 definition(
-	name: "Enhanced Thermostat Mode Director",
+	name: "Enhanced Thermostat Director",
 	namespace: "tslagle13",
 	author: "Tim Slagle",
-	description: "Changes settings of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open.",
+	description: "Changes mode of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open.",
 	category: "Green Living",
 	iconUrl: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png",
 	iconX2Url: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png"
@@ -30,6 +30,7 @@ preferences {
     page name:"directorSettings"
     page name:"ThermostatandDoors"
     page name:"ThermostatBoost"
+    page name:"ThermostatAway"
     page name:"Settings"
 
 }
@@ -47,13 +48,14 @@ def pageSetup() {
 
 	return dynamicPage(pageProperties) {
     	section("About 'Thermostat Mode Director'"){
-        	paragraph "Changes settings of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open."
+        	paragraph "Changes mode of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open."
         }
         section("Setup Menu") {
             href "directorSettings", title: "Director Settings", description: "", state:greyedOut()
             href "ThermostatandDoors", title: "Thermostat and Doors", description: "", state: greyedOutTherm()
             href "ThermostatBoost", title: "Thermostat Boost", description: "", state: greyedOutTherm1()
-            href "Settings", title: "Settings", description: "", state: greyedOutSettings()
+            href "ThermostatAway", title: "Thermostat Away", description: "", state: greyedOutTherm2()
+			href "Settings", title: "Settings", description: "", state: greyedOutSettings()
             }
         section([title:"Options", mobileOnly:true]) {
             label title:"Assign a name", required:false
@@ -61,7 +63,7 @@ def pageSetup() {
     }
 }
 
-// Show "Setup" page
+// Page - Director Settings	
 def directorSettings() {
 
     def sensor = [
@@ -88,15 +90,13 @@ def directorSettings() {
     def SetHeatingLow = [
         name:       "SetHeatingLow",
         type:       "number",
-        title:		"Heating Temperature (degrees)",
-
+        title:		"Heating Temperature (degrees)"
     ]
     
      def SetCoolingLow = [
         name:       "SetCoolingLow",
         type:       "number",
-        title:		"Cooling Temperature (degrees)",
- 
+        title:		"Cooling Temperature (degrees)"
     ]   
     
     def setHigh = [
@@ -116,15 +116,13 @@ def directorSettings() {
     def SetHeatingHigh = [
         name:       "SetHeatingHigh",
         type:       "number",
-        title:		"Heating Temperature (degrees)",
-
+        title:		"Heating Temperature (degrees)"
     ]
     
      def SetCoolingHigh = [
         name:       "SetCoolingHigh",
         type:       "number",
-        title:		"Cooling Temperature (degrees)",
-
+        title:		"Cooling Temperature (degrees)"
     ] 
     
     def neutral = [
@@ -133,15 +131,22 @@ def directorSettings() {
         title:		"Mode?",
         metadata:   [values:["auto", "heat", "cool", "off"]]
     ]
-    
-    def pageName = "Setup"
+
+    def fan = [
+        name:       "fan",
+        type:       "enum",
+        title:		"Fan mode?",
+        metadata:   [values:["fanauto", "fanon", "fanoff", "fancirc"]]
+    ]
+
+    def pageName = "Director Settings"
     
     def pageProperties = [
         name:       "directorSettings",
-        title:      "Setup",
-        nextPage:   "pageSetup"
+        title:      "Director Settings",
+        nextPage:   "ThermostatandDoors"
     ]
-
+    
     return dynamicPage(pageProperties) {
 
 		section("Which temperature sensor will control your thermostat?"){
@@ -150,13 +155,13 @@ def directorSettings() {
         section(""){
         	paragraph "Here you will setup the upper and lower thresholds for the temperature sensor that will send commands to your thermostat."
         }
-		section("When the temperature falls below this temperature set thermostat to..."){
+		section("When the temperature falls below this temperature, then change settings to..."){
 			input setLow
 			input cold
             input SetHeatingLow
             input SetCoolingLow
 		}
-        section("When the temperature goes above this tempurature set mode to..."){
+        section("When the temperature goes above this temperature, then change settings to ..."){
 			input setHigh
 			input hot
             input SetHeatingHigh
@@ -164,24 +169,27 @@ def directorSettings() {
 		}
         section("When temperature is between the previous temperatures, change mode to..."){
 			input neutral
-		}
+            input fan
+		}        
     }
     
 }
 
+// Page - Thermostat and Doors
 def ThermostatandDoors() {
 
     def thermostat = [
         name:       "thermostat",
         type:       "capability.thermostat",
-        title:      "Which?",
+        title:      "Which Thermostat?",
         multiple:   true,
         required:   true
     ]
+    
     def doors = [
         name:       "doors",
         type:       "capability.contactSensor",
-        title:      "Low temp?",
+        title:      "Which Sensor",
         multiple:	true,
         required:   true
     ]
@@ -198,13 +206,13 @@ def ThermostatandDoors() {
     def pageProperties = [
         name:       "ThermostatandDoors",
         title:      "Thermostat and Doors",
-        nextPage:   "pageSetup"
+        nextPage:   "ThermostatBoost"
     ]
 
     return dynamicPage(pageProperties) {
 
 		section(""){
-        	paragraph "If any of the doors selected here are open the thermostat will automatically be turned off and this app will be 'disabled' until all the doors are closed. (This is optional)"
+        	paragraph "If any of the doors selected here are open, the thermostat will automatically be turned off and this app will be 'disabled' until all the doors are closed. (This is optional)"
         }
         section("Choose thermostat...") {
 			input thermostat
@@ -219,6 +227,7 @@ def ThermostatandDoors() {
     
 }
 
+// Page - Thermostat Boost
 def ThermostatBoost() {
 
     def thermostat1 = [
@@ -238,7 +247,7 @@ def ThermostatBoost() {
     def modes1 = [
         name:		"modes1", 
         type:		"mode", 
-        title: 		"Put thermostat into boost mode when mode is...", 
+        title: 		"Put thermostat into boost mode when Home Mode is...", 
         multiple: 	true, 
         required: 	false
     ]
@@ -270,7 +279,7 @@ def ThermostatBoost() {
     def pageProperties = [
         name:       "ThermostatBoost",
         title:      "Thermostat Boost",
-        nextPage:   "pageSetup"
+        nextPage:   "ThermostatAway"
     ]
 
     return dynamicPage(pageProperties) {
@@ -286,8 +295,9 @@ def ThermostatBoost() {
     		input turnOnTherm
   		}
         section("Set the thermostat to the following temps") {
-    		input coolingTemp
     		input heatingTemp
+            input coolingTemp
+
   		}
   		section("For how long?") {
     		input turnOffDelay2
@@ -296,8 +306,87 @@ def ThermostatBoost() {
    			input modes1
         }
     }
+} 
+// Page - Thermostat Away
+def ThermostatAway() {
+
+    def thermostat2 = [
+        name:       "thermostat2",
+        type:       "capability.thermostat",
+        title:      "Which?",
+        multiple:   true,
+        required:   true
+    ]   
+    def modes2 = [
+        name:		"modes2", 
+        type:		"mode", 
+        title: 		"Put thermostat into away mode when Home Mode is...", 
+        multiple: 	true, 
+        required: 	false
+    ]
     
-}
+    def away = [
+        name:       "away",
+        type:       "enum",
+        title:		"Mode?",
+        metadata:   [values:["auto", "heat", "cool", "off"]]
+    ]
+
+    def SetHeatingAway = [
+        name:       "SetHeatingAway",
+        type:       "number",
+        title:		"Heating Temperature (degrees)",
+        required: 	false
+    ]
+    
+     def SetCoolingAway = [
+        name:       "SetCoolingAway",
+        type:       "number",
+        title:		"Cooling Temperature (degrees)",
+        required: 	false
+    ]      
+
+    def fanAway = [
+        name:       "fanAway",
+        type:       "enum",
+        title:		"Fan mode?",
+        metadata:   [values:["fanauto", "fanon", "fanoff", "fancirc"]],
+        required: 	false
+    ]
+
+    def pageName = "Thermostat Away"
+    
+    def pageProperties = [
+        name:       "ThermostatAway",
+        title:      "Thermostat Away",
+        nextPage:   "pageSetup"
+    ]
+
+    return dynamicPage(pageProperties) {
+
+		section(""){
+        	paragraph "Here you can change the settings of your thermostat(s) when the Home Mode changes to 'Away'."
+        }
+		section("Choose Away Mode...") {
+   			input modes2
+        }
+        
+        section("Choose a thermostat(s)") {
+   			input thermostat2
+        }
+        section("Change thermostat(s) to mode...") {
+    		input away
+  		}
+        section("Also change fan to...") {
+    		input fanAway
+  		}
+        section("Set the thermostat to the following temps") {
+    		input SetHeatingAway
+    		input SetCoolingAway
+  		}
+    } 
+ }
+
 
 // Show "Setup" page
 def Settings() {
@@ -420,6 +509,7 @@ def temperatureHandler(evt) {
 					//log.info "Setting thermostat mode to ${neutral}"
 					def msg = "I changed your thermostat mode to ${neutral} because temperature is neutral"
 					thermostat?."${neutral}"()
+                    thermostat?.thermostatFanMode(fan)
 					sendMessage(msg)
 				}
 				state.lastStatus = "three"
@@ -449,7 +539,8 @@ if(thermostat1){
     	thermostat1.setHeatingSetpoint(heatingTemp)
         
     thermoShutOffTrigger()
-    //log.debug("current coolingsetpoint is ${state.currentCoolSetpoint1}")
+   
+   //log.debug("current coolingsetpoint is ${state.currentCoolSetpoint1}")
     //log.debug("current heatingsetpoint is ${state.currentHeatSetpoint1}")
     //log.debug("current mode is ${state.currentMode1}")
 }    
@@ -469,15 +560,29 @@ def modeBoostChange(evt) {
     		thermostat1."${mode}"()
     		thermostat1.setCoolingSetpoint(coolingTemp)
     		thermostat1.setHeatingSetpoint(heatingTemp)
-        
-    	log.debug("current coolingsetpoint is ${state.currentCoolSetpoint1}")
-    	log.debug("current heatingsetpoint is ${state.currentHeatSetpoint1}")
-    	log.debug("current mode is ${state.currentMode1}")
-	}
+    
+    //log.debug("current coolingsetpoint is ${state.currentCoolSetpoint1}")
+    //log.debug("current heatingsetpoint is ${state.currentHeatSetpoint1}")
+    //log.debug("current mode is ${state.currentMode1}")
+    
+    }
 	else{
 		thermoShutOff()
     }    
 }
+
+def modeAwayChange(evt) {
+    if (location.mode == mode2) { 
+          	thermostat2."${away}"()             
+            thermostat2.setHeatingSetpoint(SetHeatingAway)
+            thermostat2.setCoolingSetpoint(SetCoolingAway)
+			thermostat2.thermostatFanMode(fanAway)
+            def msg = "I changed your thermostat mode to ${away} because Home Mode is ${mode2}"   
+			sendMessage(msg)
+	}  
+}
+
+
 
 def thermoShutOffTrigger() {
     //log.info("Starting timer to turn off thermostat")
@@ -629,6 +734,14 @@ def greyedOutTherm(){
 def greyedOutTherm1(){
 	def result = ""
     if (thermostat1) {
+    	result = "complete"	
+    }
+    result
+}
+
+def greyedOutTherm2(){
+	def result = ""
+    if (thermostat2) {
     	result = "complete"	
     }
     result
