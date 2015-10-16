@@ -19,7 +19,7 @@ definition(
 	name: "Enhanced Thermostat Director",
 	namespace: "tslagle13",
 	author: "Tim Slagle",
-	description: "Changes mode of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open.",
+	description: "Changes settings of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open.",
 	category: "Green Living",
 	iconUrl: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png",
 	iconX2Url: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png"
