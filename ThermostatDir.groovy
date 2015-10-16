@@ -356,7 +356,7 @@ def ThermostatAway() {
         name:       "fanAway",
         type:       "enum",
         title:		"Fan mode?",
-        metadata:   [values:["fanauto", "fanon", "fanoff", "fancirc"]],
+        metadata:   [values:["fanauto", "fanon", "fancirculate"]],
         required: 	false
     ]
 
