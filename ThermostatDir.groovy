@@ -90,13 +90,15 @@ def directorSettings() {
     def SetHeatingLow = [
         name:       "SetHeatingLow",
         type:       "number",
-        title:		"Heating Temperature (degrees)"
+        title:		"Heating Temperature (degrees)",
+        required:   false
     ]
     
      def SetCoolingLow = [
         name:       "SetCoolingLow",
         type:       "number",
-        title:		"Cooling Temperature (degrees)"
+        title:		"Cooling Temperature (degrees)",
+        required:   false
     ]   
     
     def setHigh = [
@@ -116,13 +118,15 @@ def directorSettings() {
     def SetHeatingHigh = [
         name:       "SetHeatingHigh",
         type:       "number",
-        title:		"Heating Temperature (degrees)"
+        title:		"Heating Temperature (degrees)",
+        required:   false
     ]
     
      def SetCoolingHigh = [
         name:       "SetCoolingHigh",
         type:       "number",
-        title:		"Cooling Temperature (degrees)"
+        title:		"Cooling Temperature (degrees)",
+        required:   false
     ] 
     
     def neutral = [
@@ -130,14 +134,15 @@ def directorSettings() {
         type:       "enum",
         title:		"Mode?",
         metadata:   [values:["auto", "heat", "cool", "off"]],
-        required:   true
+        required:   false
     ]
 
     def fan = [
         name:       "fan",
         type:       "enum",
         title:		"Fan mode?",
-        metadata:   [values:["fanauto", "fanon", "fanoff", "fancirc"]]
+        metadata:   [values:["fanauto", "fanon", "fancirculate"]],
+        required:   false
     ]
 
     def pageName = "Director Settings"
@@ -190,7 +195,7 @@ def ThermostatandDoors() {
     def doors = [
         name:       "doors",
         type:       "capability.contactSensor",
-        title:      "Which Sensor",
+        title:      "Which Sensor?",
         multiple:	true,
         required:   true
     ]
