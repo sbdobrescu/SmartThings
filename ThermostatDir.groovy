@@ -47,7 +47,7 @@ def pageSetup() {
     ]
 
 	return dynamicPage(pageProperties) {
-    	section("About 'Thermostat Mode Director'"){
+    	section("About 'Thermostat Director'"){
         	paragraph "Changes mode of your thermostat based on the temperature range of a specified temperature sensor and shuts off the thermostat if any windows/doors are open."
         }
         section("Setup Menu") {
