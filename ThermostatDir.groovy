@@ -129,7 +129,8 @@ def directorSettings() {
         name:       "neutral",
         type:       "enum",
         title:		"Mode?",
-        metadata:   [values:["auto", "heat", "cool", "off"]]
+        metadata:   [values:["auto", "heat", "cool", "off"]],
+        required:   true
     ]
 
     def fan = [
