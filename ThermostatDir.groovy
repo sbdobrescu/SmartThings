@@ -1,7 +1,7 @@
 /**
  *  Enhanced Thermostat Director
  *
- *  Copyright 2015 Tim Slagle/Bobby Dobrescu
+ *  Copyright 2015 Tim Slagle
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -241,7 +241,7 @@ def ThermostatBoost() {
         type:       "capability.thermostat",
         title:      "Which?",
         multiple:   true,
-        required:   true
+        required:   false
     ]
     def turnOnTherm = [
         name: 		"turnOnTherm", 
@@ -321,7 +321,7 @@ def ThermostatAway() {
         type:       "capability.thermostat",
         title:      "Which?",
         multiple:   true,
-        required:   true
+        required:   false
     ]   
     def modes2 = [
         name:		"modes2", 
@@ -335,7 +335,8 @@ def ThermostatAway() {
         name:       "away",
         type:       "enum",
         title:		"Mode?",
-        metadata:   [values:["auto", "heat", "cool", "off"]]
+        metadata:   [values:["auto", "heat", "cool", "off"]],
+        required: 	false
     ]
 
     def SetHeatingAway = [
@@ -365,7 +366,7 @@ def ThermostatAway() {
     def pageProperties = [
         name:       "ThermostatAway",
         title:      "Thermostat Away",
-        nextPage:   "pageSetup"
+        nextPage:   "Settings"
     ]
 
     return dynamicPage(pageProperties) {
@@ -403,7 +404,7 @@ def Settings() {
         title: 		"Send a push notification?", 
         metadata:	[values:["Yes","No"]], 
         required:	true, 
-        defaultValue: "Yes"
+        defaultValue: "No"
     ]
     
     def phoneNumber = [
@@ -419,7 +420,7 @@ def Settings() {
         title:      "Only on certain days of the week",
         multiple:   true,
         required:   false,
-        options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        options: 	["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     ]
     
     def modes = [
@@ -471,9 +472,12 @@ def init(){
     if(modes1){
     	subscribe(location, modeBoostChange)
     }
-	if(doors){
-		subscribe(doors, "contact.open", temperatureHandler)
-        subscribe(doors, "contact.closed", doorCheck)
+    if(modes2){
+    	subscribe(location, modeAwayChange)
+    }
+    if(doors){
+            subscribe(doors, "contact.open", temperatureHandler)
+            subscribe(doors, "contact.closed", doorCheck)
 	}
 }
 
@@ -578,7 +582,7 @@ def modeBoostChange(evt) {
 }
 
 def modeAwayChange(evt) {
-    if (location.mode == mode2) { 
+    if(thermostat2 && modes2.contains(location.mode)){ 
           	thermostat2."${away}"()             
             thermostat2.setHeatingSetpoint(SetHeatingAway)
             thermostat2.setCoolingSetpoint(SetCoolingAway)
