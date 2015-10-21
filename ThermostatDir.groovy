@@ -19,7 +19,7 @@
 definition(
 	name: "Honeywell Thermostat Director",
 	namespace: "smartthings",
-	author: "Tim Slagle / Bobby Dobrescu",
+	author: "Tim Slagle Modified by: Bobby Dobrescu",
 	description: "Adjust your Honeywell thermostat based on the temperature range of a specific temperature sensor",
 	category: "Green Living",
 	iconUrl: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png",
