@@ -1,7 +1,7 @@
 /**
  *  Honeywell Thermostat Director
  *
- *  Copyright 2015 Bobby Dobrescu
+ *  Copyright 2015 SmartThings
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -18,8 +18,8 @@
 
 definition(
 	name: "Honeywell Thermostat Director",
-	namespace: "bdobrescu",
-	author: "Bobby Dobrescu",
+	namespace: "smartthings",
+	author: "Tim Slagle / Bobby Dobrescu",
 	description: "Adjust your Honeywell thermostat based on the temperature range of a specific temperature sensor",
 	category: "Green Living",
 	iconUrl: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png",
