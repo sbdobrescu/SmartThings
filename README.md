@@ -1,6 +1,6 @@
 Honeywell Thermostat Director
 
-Based on Tim Slagle's Thermostat Mode Director, this app adds new functionality to better control comfort level of your home  
+Based on Tim Slagle's Thermostat Mode Director, this app adds new functionality to better control the comfort level of your home  
 
 Added features:
 - set prefered temperatures for each thermostat mode 
