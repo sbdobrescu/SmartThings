@@ -58,7 +58,7 @@ def push() {
 	log.debug "Current State ${device.currentState("switch")?.value}"
     if (toggleState == "on") {
 		sendEvent(name: "switch", value: "off", isStateChange: true, display: false)
-	} else if (toggleState == "off") {
+	} else {
 		sendEvent(name: "switch", value: "on", isStateChange: true, display: false)
 	} 
 	sendEvent(name: "momentary", value: "pushed", display: false, displayed: false)
