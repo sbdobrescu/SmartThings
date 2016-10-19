@@ -1,8 +1,7 @@
 /**
- *  Marantz Network Receiver
- *    Works on Marantz M-CR610
- *    Based on Denon receiver by Kristopher Kubicki
- *    SmartThings driver to connect your Denon Network Receiver to SmartThings
+ *  	Denon Network Receiver
+ *    	Based on Denon/Marantz receiver by Kristopher Kubicki
+ *    	SmartThings driver to connect your Denon Network Receiver to SmartThings
  *
  */
 
@@ -13,17 +12,25 @@ preferences {
 
 metadata {
     definition (name: "Denon AVR", namespace: "SB", 
-        author: "Kristopher Kubicki") {
+        author: "Bobby Dobrescu") {
         capability "Actuator"
         capability "Switch" 
         capability "Polling"
         capability "Switch Level"
+        capability "Music Player" 
+        
         attribute "mute", "string"
         attribute "input", "string"
+		attribute "inputChan", "enum"
         
         command "mute"
         command "unmute"
         command "toggleMute"
+		command "cbl"
+		command "tv"
+		command "BD"
+		command "MP"
+		command "BT"
     
         }
 
@@ -39,27 +46,39 @@ metadata {
             	attributeState "off", label: '${name}', action:"switch.on", backgroundColor: "#ffffff", icon:"st.Electronics.electronics16"
         	}             
             tileAttribute ("level", key: "SLIDER_CONTROL") {
-           		attributeState "level", label:'${name}', action:"setLevel"
+           		attributeState "default", label:'Volume Level: ${name}', action:"setLevel"
             }
+            tileAttribute("device.input", key: "SECONDARY_CONTROL") {
+            	attributeState ("default", label:'Current Input: ${currentValue}')
+        	}
         }        
         standardTile("poll", "device.poll", width: 2, height: 2, decoration: "flat") {
             state "poll", label: "", action: "polling.poll", icon: "st.secondary.refresh", backgroundColor: "#FFFFFF"
         }
-        standardTile("input", "device.input", width: 6, height: 2, decoration: "flat") {
-            state "input", label:'Current Input: ${currentValue}', backgroundColor: "#FFFFFF"
-        }
         standardTile("mute", "device.mute", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-            state "muted", label: '${name}', action:"unmute", backgroundColor: "#ffffff", icon:"st.custom.sonos.muted", nextState:"unmuted"
-            state "unmuted", label: '${name}', action:"mute", backgroundColor: "#ffffff", icon:"st.custom.sonos.unmuted", nextState:"muted"
+            state "muted", action:"unmute", backgroundColor: "#ffffff", icon:"st.custom.sonos.muted", nextState:"unmuted"
+            state "unmuted", action:"mute", backgroundColor: "#ffffff", icon:"st.custom.sonos.unmuted", nextState:"muted"
         }
+        standardTile("CBL", "device.switch", width: 2, height: 2, decoration: "flat"){
+        	state "Cable", label: 'Cable', action: "cbl", icon:"st.Electronics.electronics3"
+        	}
+        standardTile("TV", "device.switch", width: 2, height: 2, decoration: "flat"){
+        	state "TV Audio", label: 'TV Audio', action: "tv", icon:"st.Electronics.electronics18"
+        	}
+        standardTile("BD", "device.switch", width: 2, height: 2, decoration: "flat"){
+        	state "Blu-ray", label: 'Blu-ray', action: "BD", icon:"st.Electronics.electronics8"
+        	}
+        standardTile("MP", "device.switch", width: 2, height: 2, decoration: "flat"){
+        	state "Media Player", label: 'Media Player', action: "MP", backgroundColor: "#ffffff", icon:"st.Electronics.electronics6"
+			}
+        standardTile("BT", "device.switch", width: 2, height: 2, decoration: "flat"){
+        	state "BT", label: 'Bluetooth', action: "BT", icon:"st.Electronics.electronics2"
+        	}
         
         main "switch"
-        details(["switch","input","mute","poll"])
+        details(["switch","input","mute","CBL", "TV", "BD", "MP", "BT", "poll"])
     }
 }
-
-
-
 
 def parse(String description) {
 	log.debug "Parsing '${description}'"
@@ -101,7 +120,7 @@ def parse(String description) {
             sendEvent(name: "input", value: inputCanonical)
         }
     }
-    
+
     if(statusrsp.MasterVolume.value.text()) { 
     	def int volLevel = (int) statusrsp.MasterVolume.value.toFloat() ?: -40.0
         volLevel = (volLevel + 80) * 0.9
@@ -151,6 +170,34 @@ def toggleMute(){
     if(device.currentValue("mute") == "muted") { unmute() }
 	else { mute() }
 }
+
+def cbl() {
+	def cbl = "SAT/CBL"
+    log.debug "Setting input to '${cbl}'"
+    request("cmd0=PutZone_InputFunction%2FSAT/CBL")
+	}
+
+def tv() {
+    log.debug "Setting input to TV Audio"
+    request("cmd0=PutZone_InputFunction%2FTV")
+    }
+
+def BD() {
+	log.debug "Setting input to Blu-ray"
+    request("cmd0=PutZone_InputFunction%2FBD")
+	}
+
+def MP() {
+	log.debug "Setting input to Media Player"
+    request("cmd0=PutZone_InputFunction%2FMPLAY")
+
+	}
+
+def BT() {
+	log.debug "Setting input to Bluetooth"
+    request("cmd0=PutZone_InputFunction%2FBT")
+}
+
 
 def poll() { 
 	refresh()
