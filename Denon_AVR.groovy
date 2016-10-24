@@ -1,8 +1,8 @@
 /**
- *  	Denon Network Receiver
+ *  	Denon Network Receiver 
  *    	Based on Denon/Marantz receiver by Kristopher Kubicki
  *    	SmartThings driver to connect your Denon Network Receiver to SmartThings
- *
+ *		Tested with AVR-S710W (game1 & game2 inputs are not available), AVR 1912
  */
 
 preferences {
@@ -31,7 +31,8 @@ metadata {
 		command "BD"
 		command "MP"
 		command "BT"
-    
+		command "G1"
+		command "G2"    
         }
 
     simulator {
@@ -74,9 +75,14 @@ metadata {
         standardTile("BT", "device.switch", width: 2, height: 2, decoration: "flat"){
         	state "BT", label: 'Bluetooth', action: "BT", icon:"st.Electronics.electronics2"
         	}
-        
+        standardTile("G1", "device.switch", width: 2, height: 2, decoration: "flat"){
+        	state "G1", label: 'Game 1', action: "G1", icon:"st.Electronics.electronics11"
+        	}
+        standardTile("G2", "device.switch", width: 2, height: 2, decoration: "flat"){
+        	state "G2", label: 'Game 2', action: "G1", icon:"st.Electronics.electronics19"
+        	}            
         main "switch"
-        details(["switch","input","mute","CBL", "TV", "BD", "MP", "BT", "poll"])
+        details(["switch","input","mute","CBL", "TV", "BD", "MP", "BT", "G1", "G2","poll"])
     }
 }
 
@@ -197,8 +203,14 @@ def BT() {
 	log.debug "Setting input to Bluetooth"
     request("cmd0=PutZone_InputFunction%2FBT")
 }
-
-
+def G1() {
+	log.debug "Setting input to Game 1"
+    request("cmd0=PutZone_InputFunction%2FGAME1")
+}
+def G2() {
+	log.debug "Setting input to Game 2"
+    request("cmd0=PutZone_InputFunction%2FGAME2")
+}
 def poll() { 
 	refresh()
 }
