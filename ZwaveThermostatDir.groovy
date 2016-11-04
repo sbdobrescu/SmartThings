@@ -1,6 +1,11 @@
 /**
- *  Honeywell Thermostat Director
- *
+ *  Zwave Thermostat Manager
+ * 
+ * Credits and Kudos: 	this app is largely based on the more popular Thrmostat Director SA by Tim Slagle - 
+ * 						many thanks to @slagle for his continued support. 
+ * 						Without his brilliance, this app would not exist!
+ * 
+ * 
  *  Copyright 2015 SmartThings
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -13,15 +18,13 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  */
-
-// Automatically generated. Make future change here.
-
+ 
 definition(
-	name: "Honeywell Thermostat Director",
+	name: "ZWave Thermostat Manager",
 	namespace: "BD",
-	author: "Tim Slagle Modified by: Bobby Dobrescu",
-	description: "Adjust your Honeywell thermostat based on the temperature range of a specific temperature sensor",
-	category: "Green Living",
+	author: "Bobby Dobrescu",
+	description: "Adjust zwave thermostats based on a temperature range of a specific temperature sensor",
+	category: "My apps",
 	iconUrl: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png",
 	iconX2Url: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png"
 )
@@ -47,11 +50,11 @@ def pageSetup() {
     ]
 
 	return dynamicPage(pageProperties) {
-        section("Setup Menu") {
-            href "TemperatureSettings", title: "Temperatures", description: "", state:greyedOut()
-            href "ThermostatandDoors", title: "Thermostat & Sensors", description: "", state: greyedOutTherm()
-            href "ThermostatAway", title: "Thermostat Away Mode", description: "", state: greyedOutTherm2()
-			href "Settings", title: "General Settings", description: "", state: greyedOutSettings()
+        section("General Settings") {
+            href "TemperatureSettings", title: "Ambiance", description: "", state:greyedOut()
+            href "ThermostatandDoors", title: "Disabled Mode", description: "", state: greyedOutTherm()
+            href "ThermostatAway", title: "Away Mode", description: "", state: greyedOutTherm2()
+			href "Settings", title: "Other Settings", description: "", state: greyedOutSettings()
             }
         section([title:"Options", mobileOnly:true]) {
             label title:"Assign a name", required:false
@@ -65,7 +68,14 @@ def TemperatureSettings() {
     def sensor = [
         name:       "sensor",
         type:       "capability.temperatureMeasurement",
-        title:      "Which Sensor?",
+        title:      "Which Temperature Sensor?",
+        multiple:   false,
+        required:   true
+    ]
+    def thermostat = [
+        name:       "thermostat",
+        type:       "capability.thermostat",
+        title:      "Which Thermostat?",
         multiple:   false,
         required:   true
     ]
@@ -80,7 +90,9 @@ def TemperatureSettings() {
         name:       "cold",
         type:       "enum",
         title:		"Mode?",
-        metadata:   [values:["auto", "heat", "cool", "off"]]
+    	required:   false,
+		metadata:   [values:["auto", "heat", "cool", "off"]]
+
     ]
 
     def SetHeatingLow = [
@@ -108,6 +120,7 @@ def TemperatureSettings() {
         name:       "hot",
         type:       "enum",
         title:		"Mode?",
+        required:   false,
         metadata:   [values:["auto", "heat", "cool", "off"]]
     ]
     
@@ -125,23 +138,25 @@ def TemperatureSettings() {
         required:   false
     ] 
   
-    def pageName = "Temperature Settings"
+    def pageName = "Ambiance"
     
     def pageProperties = [
         name:       "TemperatureSettings",
-        title:      "Temperature Settings",
-        nextPage:   "ThermostatandDoors"
+        title:      "",
+        //nextPage:   "ThermostatandDoors"
     ]
     
     return dynamicPage(pageProperties) {
-
-		section("Select the temperature sensor that will control your thermostat"){
+        section("Select the main thermostat") {
+			input thermostat
+		}
+        section("Select the temperature sensor that will control your thermostat"){
 			input sensor
 		}
 		section("When the temperature falls below this temperature..."){
 			input setLow
 		}
-        section("Change the following settings:"){
+        section("Adjust the thermostat to the following settings:"){
 			input cold
             input SetHeatingLow
             input SetCoolingLow
@@ -149,7 +164,7 @@ def TemperatureSettings() {
         section("When the temperature raises above this temperature..."){
 			input setHigh
 		}
-        section("Change the following settings:"){
+        section("Adjust the thermostat to the following settings:"){
 			input hot
             input SetHeatingHigh
             input SetCoolingHigh
@@ -157,21 +172,13 @@ def TemperatureSettings() {
     }  
 }
 
-// Page - Thermostat and Sensors
+// Page - Disabled Mode
 def ThermostatandDoors() {
-
-    def thermostat = [
-        name:       "thermostat",
-        type:       "capability.thermostat",
-        title:      "Which Thermostat?",
-        multiple:   false,
-        required:   true
-    ]
-    
+  
     def doors = [
         name:       "doors",
         type:       "capability.contactSensor",
-        title:      "Which Sensor?",
+        title:      "Which Sensor(s)?",
         multiple:	true,
         required:   false
     ]
@@ -187,19 +194,12 @@ def ThermostatandDoors() {
     
     def pageProperties = [
         name:       "ThermostatandDoors",
-        title:      "Thermostat and Sensors",
-        nextPage:   "ThermostatAway"
+        title:      "",
+        //nextPage:   "ThermostatAway"
     ]
 
     return dynamicPage(pageProperties) {
-
-		section(""){
-        	paragraph "Optional: select one or more sensors to turn off the thermostat"
-        }
-        section("") {
-			input thermostat
-		}
-        section("If these sensors are open, turn off thermostat regardless of temperature settings") {
+        section("When one or more contact sensors open, then turn off the thermostat") {
 			input doors
 		}
 		section("Wait this long before turning the thermostat off (defaults to 1 minute)") {
@@ -215,7 +215,7 @@ def ThermostatAway() {
     def modes2 = [
         name:		"modes2", 
         type:		"mode", 
-        title: 		"Put thermostat into Away Mode when Home Mode changes to...", 
+        title: 		"Which Location Mode(s)?", 
         multiple: 	true, 
         required: 	false
     ]
@@ -223,7 +223,7 @@ def ThermostatAway() {
     def away = [
         name:       "away",
         type:       "enum",
-        title:		"Which Mode?",
+        title:		"Mode?",
         metadata:   [values:["auto", "heat", "cool", "off"]], 
         required: 	false
     ]
@@ -239,21 +239,23 @@ def ThermostatAway() {
         name:       "AwayCold",
         type:       "enum",
         title:		"Mode?",
-        metadata:   [values:["auto", "heat", "cool", "off"]]
+        metadata:   [values:["auto", "heat", "cool", "off"]],
+        required: 	false,
     ]
     
     def setAwayHigh = [
         name:       "setAwayHigh",
         type:       "decimal",
         title:      "High temp?",
-        required:   false
+		required:   false
     ]
     
     def AwayHot = [
         name:       "AwayHot",
         type:       "enum",
         title:		"Mode?",
-        metadata:   [values:["auto", "heat", "cool", "off"]]
+        required: 	false,
+metadata:   [values:["auto", "heat", "cool", "off"]]
     ]
     
     def SetHeatingAway = [
@@ -273,7 +275,7 @@ def ThermostatAway() {
     def fanAway = [
         name:       "fanAway",
         type:       "enum",
-        title:		"Fan mode?",
+        title:		"Fan Mode?",
         metadata:   [values:["fanAuto", "fanOn", "fanCirculate"]],
         required: 	false
     ]
@@ -282,45 +284,34 @@ def ThermostatAway() {
     
     def pageProperties = [
         name:       "ThermostatAway",
-        title:      "Thermostat Away",
-        nextPage:   "Settings"
+        title:      "",
+        //nextPage:   "Settings"
     ]
 
     return dynamicPage(pageProperties) {
-
-		section(""){
-        	paragraph "Adjust the settings of your thermostat when the Home Mode changes to 'Away'."
-        }
 		
-        section("Select Home Away Mode(s)...") {
+        section("When the Location Mode changes to 'Away'") {
    			input modes2
         }
            
-        section("Change the thermostat to Away Mode...") {
+        section("Adjust the thermostat to the following settings:") {
     		input away
-  		}
-        
-        section("Also change Away Fan to...") {
-    		input fanAway
-  		}
-        
-        section("Set the thermostat to the following temperatures") {
-    		input SetHeatingAway
-    		input SetCoolingAway
-  		}
-   		
-        section("If the temperature falls below this temperature..."){
+            input fanAway                        
+            input SetHeatingAway
+			input SetCoolingAway
+  		}	
+        section("If the temperature falls below this temperature while away..."){
 			input setAwayLow
 		}
         
-        section("Change thermostat to..."){
+        section("Automatically adjust the thermostat to the following operating mode..."){
 			input AwayCold
 		}
         
-        section("If the temperature raises above this temperature..."){
+        section("If the temperature raises above this temperature while away..."){
 			input setAwayHigh
     	}
-        section("Change thermostat to..."){
+        section("Automatically adjust the thermostat to the following operating mode..."){
 			input AwayHot
     	} 
 	 }
@@ -328,23 +319,7 @@ def ThermostatAway() {
 
 // Show "Setup" page
 def Settings() {
-
-    def sendPushMessage = [
-        name: 		"sendPushMessage",
-        type: 		"enum", 
-        title: 		"Send a push notification?", 
-        metadata:	[values:["Yes","No"]], 
-        required:	true, 
-        defaultValue: "No"
-    ]
-    
-    def phoneNumber = [
-        name: 		"phoneNumber", 
-        type:		"phone", 
-        title: 		"Send SMS notifications to?", 
-        required: 	false
-    ]
-    
+ 
     def days = [
         name:       "days",
         type:       "enum",
@@ -362,22 +337,25 @@ def Settings() {
         required: 	false
     ]
     
-    def pageName = "Settings"
+    def pageName = ""
     
     def pageProperties = [
         name:       "Settings",
-        title:      "Settings",
-        nextPage:   "pageSetup"
+        title:      "",
+        //nextPage:   "pageSetup"
     ]
 
-    return dynamicPage(pageProperties) {
-
-
-		section( "Notifications" ) {
-			input sendPushMessage
-			input phoneNumber
-		}
-		section(title: "More options", hideable: true) {
+    return dynamicPage(pageProperties) {    
+        
+        section("Notifications") {
+            input("recipients", "contact", title: "Send notifications to", multiple: true, required: false) {
+            paragraph 	"You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification."+
+           				"E.G. 8045551122;8046663344"
+            input "sms", "phone", title: "To this phone", multiple: false, required: false
+            input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
+            }
+ }       
+        section(title: "Restrictions", hideable: true) {
 			href "timeIntervalInput", title: "Only during a certain time", description: getTimeLabel(starting, ending), state: greyedOutTime(starting, ending), refreshAfterSelection:true
 			input days
 			input modes
@@ -400,9 +378,11 @@ def updated(){
 def init(){
 	state.lastStatus = null
     runIn(60, "temperatureHandler")
+    log.info "Temperature will be evaluated in one minute"
     subscribe(sensor, "temperature", temperatureHandler)
     if(modes2){
     	subscribe(location, modeAwayChange)
+        subscribe(sensor, "temperature", modeAwayTempHandler)
     }
     if(doors){
             subscribe(doors, "contact.open", temperatureHandler)
@@ -417,48 +397,54 @@ def temperatureHandler(evt) {
                 def temp = setLow
                 setLow = setHigh
                 setHigh = temp
+                log debug "Detected ${setLow} >  ${setHigh}. Auto-adjusting setting to  ${temp}"
             }
 			if (doorsOk) {
            		def currentTemp = sensor.latestValue("temperature")
            		def currentMode = sensor.latestValue("thermostatMode")
-           		log.info "Current thermostat mode is ${currentMode}, temperature is: ${currentTemp} and last status is: ${lastStatus}..."
+                def currentHSP = sensor.latestValue("heatingSetpoint") 
+                def currentCSP = sensor.latestValue("coolingSetpoint") 
+                //log.info "Thermostat data is: ${currentMode} mode, ${currentTemp} temp, ${currentHSP} heatSP, ${currentCSP} coolSP"+
+                //		 " and last app status is: ${lastStatus}"
                 
                 if (currentTemp < setLow) {
                     if (state.lastStatus == "one" || state.lastStatus == "two" || state.lastStatus == null){
-                        
                         state.lastStatus = "one" 
-             
-                         if (currentMode == "cool") {
+                         if (currentMode == "cool" || currentMode == "off") {
                      		def msg = "Changing your ${thermostat} mode to ${cold} because temperature is below ${setLow}"
                            	thermostat?."${cold}"()
                            	thermostat?.setHeatingSetpoint(SetHeatingLow)
-                           	//thermostat?.setCoolingSetpoint(SetCoolingLow)
+                           	if (SetCoolingLow) thermostat?.setCoolingSetpoint(SetCoolingLow)
                            	thermostat?.poll()
                            	sendMessage(msg)
                         }
-                     	else {
-                        	def msg = "Changing your ${thermostat} back to ${SetHeatingLow} because temperature is below ${setLow}"
+                     	else if  (SetHeatingLow < currentHSP) {
+                            def msg = "Changing your ${thermostat} back to ${SetHeatingLow} because temperature is below ${setLow}"+
+                            " the current Heating Setpoint is ${currentHSP}"
                      		thermostat?.setHeatingSetpoint(SetHeatingLow)
-                     		thermostat?.poll()
+                     		if (SetCoolingLow) thermostat?.setCoolingSetpoint(SetCoolingLow)
+                            thermostat?.poll()
                             sendMessage(msg)
-                     	}
-                    }                       
-                }              
+                        }
+                    }
+                }                                     
                 if (currentTemp > setHigh) {
                     if (state.lastStatus == "one" || state.lastStatus == "two" || state.lastStatus == null){
                         state.lastStatus = "two"
-						if (currentMode == "heat") {
+						if (currentMode == "heat" || currentMode == "off") {
                             def msg = "Changing your ${thermostat} mode to ${hot} because temperature is above ${setHigh}"
                         	thermostat?."${hot}"()
-                        	//thermostat?.setHeatingSetpoint(SetHeatingHigh)
+                        	if (SetHeatingHigh) thermostat?.setHeatingSetpoint(SetHeatingHigh)
                         	thermostat?.setCoolingSetpoint(SetCoolingHigh)
                         	thermostat?.poll()
                         	sendMessage(msg)                
                         }
-                        else {
-                    	    def msg = "Changing your ${thermostat} to ${SetCoolingHigh} because temperature is above ${setHigh}"
+                        else if (SetCoolingHigh < currentCSP) {
+                            def msg = "Changing your ${thermostat} to ${SetCoolingHigh} because temperature is above ${setHigh} and"+
+                            " the current Cooling Setpoint is ${currentCSP}"
                     		thermostat?.setCoolingSetpoint(SetCoolingHigh)
-                     		thermostat?.poll()
+                     		if (SetHeatingHigh) thermostat?.setHeatingSetpoint(SetHeatingHigh)
+                            thermostat?.poll()
                             sendMessage(msg)                           
                        	}
                    }     
@@ -466,7 +452,7 @@ def temperatureHandler(evt) {
             }
             else{
                 def delay = (turnOffDelay != null && turnOffDelay != "") ? turnOffDelay * 60 : 60
-                log.debug("Detected open doors.  Checking door states again")
+                log.debug("Detected open doors.  Checking door states again in ${delay} minutes")
                 runIn(delay, "doorCheck")
             }
         }
@@ -489,7 +475,7 @@ def modeAwayChange(evt){
             else  {
         			state.lastStatus = null
                     temperatureHandler()
-                    log.debug "Running Temperature Handler because mode is ${away} and last staus is ${lastStatus}"
+                    log.debug "Running Temperature Handler because Home Mode is no longer in away, and the last staus is ${lastStatus}"
 			}
      	}
 	}
@@ -498,22 +484,24 @@ def modeAwayChange(evt){
 def modeAwayTempHandler(evt) {
 
 		if(lastStatus == "away"){
-        //if(modes2.contains(location.mode)){
-           if (currentTemp < setAwayLow) {
+        	if(modes2.contains(location.mode)){
+           		if (currentTemp < setAwayLow) {
 					thermostat?."${Awaycold}"()
                     thermostat?.poll()
                     def msg = "I changed your ${thermostat} mode to ${Awaycold} because temperature is below ${setAwayLow}"
                     sendMessage(msg)
-  			}
-			if (currentTemp > setHigh) {
+  				}
+				if (currentTemp > setHigh) {
 					thermostat?."${Awayhot}"()
                     thermostat?.poll()
 					def msg = "I changed your ${thermostat} mode to ${Awayhot} because temperature is above ${setAwayHigh}"
                     sendMessage(msg)
   				}
-		Else {
-        	state.lastStatus = null
-            log.debug "Temp changed while staus is ${lastStatus} but the mode is ${away}. Resetting lastStatus"
+             }
+			Else {
+        			state.lastStatus = null
+            		temperatureHandler()
+            		log.debug "Temp changed while staus is ${lastStatus} but the Home Mode is no longer in away. Resetting lastStatus"
         	}
 	}
 }
@@ -538,14 +526,31 @@ def doorCheck(evt){
 	}
 }
 
-private sendMessage(msg){
-	if (sendPushMessage == "Yes") {
-		sendPush(msg)
-	}
-	if (phoneNumber != null) {
-		sendSms(phoneNumber, msg)
-	}
+private void sendText(number, message) {
+    if (sms) {
+        def phones = sms.split("\\;")
+        for (phone in phones) {
+            sendSms(phone, message)
+        }
+    }
 }
+
+private void sendMessage(message) {
+    log.debug "sending notification:  ${message}"
+    if (recipients) { 
+    //if (location.contactBookEnabled) {
+        sendNotificationToContacts(message, recipients)
+    } //else {
+    if (push) {
+        sendPush message
+    } else {
+            sendNotificationEvent(message)
+    }
+    if (sms) {
+        sendText(sms, message)
+    }
+}
+            
 
 private getAllOk() {
 	modeOk && daysOk && timeOk && doorsOk
@@ -651,7 +656,7 @@ def greyedOutTherm2(){
 
 def greyedOutSettings(){
 	def result = ""
-    if (starting || ending || days || modes || sendPushMessage) {
+    if (starting || ending || days || modes || push) {
     	result = "complete"	
     }
     result
