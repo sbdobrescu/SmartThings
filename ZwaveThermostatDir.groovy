@@ -349,8 +349,7 @@ def Settings() {
         
         section("Notifications") {
             input("recipients", "contact", title: "Send notifications to", multiple: true, required: false) {
-            paragraph 	"You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification."+
-           				"E.G. 8045551122;8046663344"
+	    paragraph 	"You may enter multiple phone numbers separated by semicolon (;) - E.G. 8045551122;8046663344"
             input "sms", "phone", title: "To this phone", multiple: false, required: false
             input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
             }
