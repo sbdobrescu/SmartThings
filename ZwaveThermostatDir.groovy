@@ -1,7 +1,7 @@
 /**
  *  Zwave Thermostat Manager
  * 
- * Credits and Kudos: 	this app is largely based on the more popular Thrmostat Director SA by Tim Slagle - 
+ * Credits and Kudos: 	this app is largely based on the more popular Thermostat Director SA by Tim Slagle - 
  * 						many thanks to @slagle for his continued support. 
  * 						Without his brilliance, this app would not exist!
  * 
@@ -99,7 +99,7 @@ def TemperatureSettings() {
         name:       "SetHeatingLow",
         type:       "number",
         title:		"Heating Temperature (degrees)",
-        required:   false
+        required:   true
     ]
     
      def SetCoolingLow = [
@@ -135,7 +135,7 @@ def TemperatureSettings() {
         name:       "SetCoolingHigh",
         type:       "number",
         title:		"Cooling Temperature (degrees)",
-        required:   false
+        required:   true
     ] 
   
     def pageName = "Ambiance"
@@ -166,8 +166,8 @@ def TemperatureSettings() {
 		}
         section("Adjust the thermostat to the following settings:"){
 			input hot
-            input SetHeatingHigh
             input SetCoolingHigh
+            input SetHeatingHigh
 		}        
     }  
 }
@@ -190,6 +190,14 @@ def ThermostatandDoors() {
         required:	false
     ]
     
+    def resetOff = [
+        name:       "resetOff",
+        type:       "bool",
+        title:		"Reset Thermostat Settings when all Sensor(s) are closed",
+        required:	false,
+        defaultValue: false
+    ]
+       
     def pageName = "Thermostat and Doors"
     
     def pageProperties = [
@@ -204,6 +212,7 @@ def ThermostatandDoors() {
 		}
 		section("Wait this long before turning the thermostat off (defaults to 1 minute)") {
 			input turnOffDelay
+            input resetOff 
 		}
     }
     
@@ -349,7 +358,8 @@ def Settings() {
         
         section("Notifications") {
             input("recipients", "contact", title: "Send notifications to", multiple: true, required: false) {
-	    paragraph 	"You may enter multiple phone numbers separated by semicolon (;) - E.G. 8045551122;8046663344"
+            paragraph 	"You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification."+
+           				"E.G. 8045551122;8046663344"
             input "sms", "phone", title: "To this phone", multiple: false, required: false
             input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
             }
@@ -403,23 +413,22 @@ def temperatureHandler(evt) {
            		def currentMode = sensor.latestValue("thermostatMode")
                 def currentHSP = sensor.latestValue("heatingSetpoint") 
                 def currentCSP = sensor.latestValue("coolingSetpoint") 
-                //log.info "Thermostat data is: ${currentMode} mode, ${currentTemp} temp, ${currentHSP} heatSP, ${currentCSP} coolSP"+
-                //		 " and last app status is: ${lastStatus}"
+                log.info "Thermostat data (mode: ${currentMode}, temp: ${currentTemp}, HSP: ${currentHSP}, CSP: ${currentCSP})"+
+                		 " status: ${lastStatus}"
                 
                 if (currentTemp < setLow) {
                     if (state.lastStatus == "one" || state.lastStatus == "two" || state.lastStatus == null){
                         state.lastStatus = "one" 
                          if (currentMode == "cool" || currentMode == "off") {
-                     		def msg = "Changing your ${thermostat} mode to ${cold} because temperature is below ${setLow}"
-                           	thermostat?."${cold}"()
+                     		def msg = "Adjusting ${thermostat} operating mode and setpoints because temperature is below ${setLow}"
+                           	if (cold) thermostat?."${cold}"()
                            	thermostat?.setHeatingSetpoint(SetHeatingLow)
                            	if (SetCoolingLow) thermostat?.setCoolingSetpoint(SetCoolingLow)
                            	thermostat?.poll()
                            	sendMessage(msg)
                         }
-                     	else if  (SetHeatingLow < currentHSP) {
-                            def msg = "Changing your ${thermostat} back to ${SetHeatingLow} because temperature is below ${setLow}"+
-                            " the current Heating Setpoint is ${currentHSP}"
+                     	else if  (currentHSP < SetHeatingLow) {
+                            def msg = "Adjusting ${thermostat} setpoints because temperature is below ${setLow}"
                      		thermostat?.setHeatingSetpoint(SetHeatingLow)
                      		if (SetCoolingLow) thermostat?.setCoolingSetpoint(SetCoolingLow)
                             thermostat?.poll()
@@ -431,16 +440,15 @@ def temperatureHandler(evt) {
                     if (state.lastStatus == "one" || state.lastStatus == "two" || state.lastStatus == null){
                         state.lastStatus = "two"
 						if (currentMode == "heat" || currentMode == "off") {
-                            def msg = "Changing your ${thermostat} mode to ${hot} because temperature is above ${setHigh}"
-                        	thermostat?."${hot}"()
+                            def msg = "Adjusting ${thermostat} operating mode and setpoints because temperature is above ${setHigh}"
+                        	if (hot) thermostat?."${hot}"()
                         	if (SetHeatingHigh) thermostat?.setHeatingSetpoint(SetHeatingHigh)
                         	thermostat?.setCoolingSetpoint(SetCoolingHigh)
                         	thermostat?.poll()
                         	sendMessage(msg)                
                         }
-                        else if (SetCoolingHigh < currentCSP) {
-                            def msg = "Changing your ${thermostat} to ${SetCoolingHigh} because temperature is above ${setHigh} and"+
-                            " the current Cooling Setpoint is ${currentCSP}"
+                        else if (currentCSP > SetCoolingHigh) {
+                            def msg = "Adjusting ${thermostat} setpoints because temperature is above ${setHigh}"
                     		thermostat?.setCoolingSetpoint(SetCoolingHigh)
                      		if (SetHeatingHigh) thermostat?.setHeatingSetpoint(SetHeatingHigh)
                             thermostat?.poll()
@@ -451,10 +459,11 @@ def temperatureHandler(evt) {
             }
             else{
                 def delay = (turnOffDelay != null && turnOffDelay != "") ? turnOffDelay * 60 : 60
-                log.debug("Detected open doors.  Checking door states again in ${delay} minutes")
+                log.debug("Detected open doors.  Checking door states again in ${delay} seconds")
                 runIn(delay, "doorCheck")
             }
         }
+        log.trace ("Detected temperature change but all settings are ok, not taking any actions.")
 	}
 }
 
@@ -463,11 +472,11 @@ def modeAwayChange(evt){
     	if (modes2){
             if(modes2.contains(location.mode)){
                     state.lastStatus = "away"
-                    thermostat."${away}"()             
-                    thermostat.setHeatingSetpoint(SetHeatingAway)
-                    thermostat.setCoolingSetpoint(SetCoolingAway)
-                    thermostat.setThermostatFanMode(fanAway)
-                    def msg = "I changed your ${thermostat} mode to ${away} because Home Mode is set to Away"   
+                    if (away) thermostat."${away}"()             
+                    if(SetHeatingAway) thermostat.setHeatingSetpoint(SetHeatingAway)
+                    if(SetCoolingAway) thermostat.setCoolingSetpoint(SetCoolingAway)
+                    if(fanAway) thermostat.setThermostatFanMode(fanAway)
+                    def msg = "Adjusting ${thermostat} mode and setpoints because Location Mode is set to Away"   
                     sendMessage(msg) 
                     log.debug "Running AwayChange because mode is now ${away} and last staus is ${lastStatus}"
             }
@@ -477,21 +486,21 @@ def modeAwayChange(evt){
                     log.debug "Running Temperature Handler because Home Mode is no longer in away, and the last staus is ${lastStatus}"
 			}
      	}
-	}
+	log.trace ("Detected temperature change while away but all settings are ok, not taking any actions.")
+    }
 }
 
 def modeAwayTempHandler(evt) {
-
 		if(lastStatus == "away"){
         	if(modes2.contains(location.mode)){
            		if (currentTemp < setAwayLow) {
-					thermostat?."${Awaycold}"()
+					if(Awaycold) thermostat?."${Awaycold}"()
                     thermostat?.poll()
                     def msg = "I changed your ${thermostat} mode to ${Awaycold} because temperature is below ${setAwayLow}"
                     sendMessage(msg)
   				}
 				if (currentTemp > setHigh) {
-					thermostat?."${Awayhot}"()
+					if(Awayhot) thermostat?."${Awayhot}"()
                     thermostat?.poll()
 					def msg = "I changed your ${thermostat} mode to ${Awayhot} because temperature is above ${setAwayHigh}"
                     sendMessage(msg)
@@ -500,13 +509,17 @@ def modeAwayTempHandler(evt) {
 			Else {
         			state.lastStatus = null
             		temperatureHandler()
-            		log.debug "Temp changed while staus is ${lastStatus} but the Home Mode is no longer in away. Resetting lastStatus"
+            		log.debug "Temp changed while staus is ${lastStatus} but the Location Mode is no longer in away. Resetting lastStatus"
         	}
 	}
 }
 
 def doorCheck(evt){
 	if (!doorsOk){
+    	def disabledTemp = sensor.latestValue("temperature")
+       	def disabledMode = sensor.latestValue("thermostatMode")
+       	def disableHSP = sensor.latestValue("heatingSetpoint") 
+        def disableCSP = sensor.latestValue("coolingSetpoint") 
 		log.debug("doors still open turning off ${thermostat}")
 		def msg = "I changed your ${thermostat} mode to off because some doors are open"
 		
@@ -517,9 +530,15 @@ def doorCheck(evt){
 		state.lastStatus = "off"
 	}
 
-	else{
+	else {
     	if (state.lastStatus == "off"){
 			state.lastStatus = null
+            if (resetOff){
+               	log.debug("Contact sensor(s) are now closed restoring ${thermostat} settings")
+        	thermostat."${disabledMode}"()             
+                thermostat.setHeatingSetpoint(disableHSP)
+                thermostat.setCoolingSetpoint(disableCSP) 		    
+	    }
         }
         temperatureHandler()
 	}
@@ -557,13 +576,13 @@ private getAllOk() {
 
 private getModeOk() {
 	def result = !modes || modes.contains(location.mode)
-	log.trace "modeOk = $result"
+	//log.trace "modeOk = $result"
 	result
 }
 
 private getDoorsOk() {
 	def result = !doors || !doors.latestValue("contact").contains("open")
-	log.trace "doorsOk = $result"
+	//log.trace "doorsOk = $result"
 	result
 }
 
@@ -581,7 +600,7 @@ private getDaysOk() {
 		def day = df.format(new Date())
 		result = days.contains(day)
 	}
-	log.trace "daysOk = $result"
+	//log.trace "daysOk = $result"
 	result
 }
 
@@ -601,7 +620,7 @@ private getTimeOk() {
     	result = currTime <= stop
     }
     
-	log.trace "timeOk = $result"
+	//log.trace "timeOk = $result"
 	result
 }
 
