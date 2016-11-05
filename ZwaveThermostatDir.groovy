@@ -515,14 +515,15 @@ def modeAwayTempHandler(evt) {
 }
 
 def doorCheck(evt){
-	if (!doorsOk){
-    	def disabledTemp = sensor.latestValue("temperature")
+    	
+        def disabledTemp = sensor.latestValue("temperature")
        	def disabledMode = sensor.latestValue("thermostatMode")
        	def disableHSP = sensor.latestValue("heatingSetpoint") 
         def disableCSP = sensor.latestValue("coolingSetpoint") 
+		log.info "Disable settings: ${disabledMode} mode, ${disableHSP} HSP, ${disableCSP} CSP"
+    if (!doorsOk){
 		log.debug("doors still open turning off ${thermostat}")
 		def msg = "I changed your ${thermostat} mode to off because some doors are open"
-		
         if (state.lastStatus != "off"){
         	thermostat?.off()
 			sendMessage(msg)
@@ -533,12 +534,12 @@ def doorCheck(evt){
 	else {
     	if (state.lastStatus == "off"){
 			state.lastStatus = null
-            if (resetOff){
-               	log.debug("Contact sensor(s) are now closed restoring ${thermostat} settings")
-        	thermostat."${disabledMode}"()             
+		    if (resetOff){
+                log.debug("Contact sensor(s) are now closed restoring ${thermostat} with settings: ${disabledMode} mode, ${disableHSP} HSP, ${disableCSP} CSP")
+                thermostat."${disabledMode}"()             
                 thermostat.setHeatingSetpoint(disableHSP)
                 thermostat.setCoolingSetpoint(disableCSP) 		    
-	    }
+	    	}
         }
         temperatureHandler()
 	}
