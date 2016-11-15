@@ -55,9 +55,9 @@ def pageSetup() {
             href "ThermostatandDoors", title: "Disabled Mode", description: "", state: greyedOutTherm()
             href "ThermostatAway", title: "Away Mode", description: "", state: greyedOutTherm2()
 			href "Settings", title: "Other Settings", description: "", state: greyedOutSettings()
-            }
+         }
         section([title:"Options", mobileOnly:true]) {
-            label title:"Assign a name", required:false
+            label title:"Assign a name", required:false       
         }
     }
 }
@@ -358,7 +358,7 @@ def Settings() {
         
         section("Notifications") {
             input("recipients", "contact", title: "Send notifications to", multiple: true, required: false) {
-            paragraph 	"You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification."+
+            paragraph 	"You may enter multiple phone numbers separated by semicolon."+
            				"E.G. 8045551122;8046663344"
             input "sms", "phone", title: "To this phone", multiple: false, required: false
             input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
@@ -368,18 +368,22 @@ def Settings() {
 			href "timeIntervalInput", title: "Only during a certain time", description: getTimeLabel(starting, ending), state: greyedOutTime(starting, ending), refreshAfterSelection:true
 			input days
 			input modes
-		}    
+        }
+		section(title: "Debug") {     
+        	input "debug", "bool", title: "Enable debug messages in IDE for troubleshooting purposes", required: false, defaultValue: false, refreshAfterSelection:true
+        	input "info", "bool", title: "Enable info messages in IDE to display actions in Live Logging", required: false, defaultValue: false, refreshAfterSelection:true
+        }    
     }
     
 }
 
 def installed(){
-	log.debug "Installed called with $settings"
+	if (debug) log.debug "Installed called with $settings"
 	init()
 }
 
 def updated(){
-	log.debug "Updated called with $settings"
+		if (debug) log.debug "Updated called with $settings"
 	unsubscribe()
 	init()
 }
@@ -387,7 +391,7 @@ def updated(){
 def init(){
 	state.lastStatus = null
     runIn(60, "temperatureHandler")
-    log.info "Temperature will be evaluated in one minute"
+    	if (debug) log.debug "Temperature will be evaluated in one minute"
     subscribe(sensor, "temperature", temperatureHandler)
     if(modes2){
     	subscribe(location, modeAwayChange)
@@ -406,14 +410,15 @@ def temperatureHandler(evt) {
                 def temp = setLow
                 setLow = setHigh
                 setHigh = temp
-                log debug "Detected ${setLow} >  ${setHigh}. Auto-adjusting setting to  ${temp}"
+                if(info) log.info "Detected ${setLow} >  ${setHigh}. Auto-adjusting setting to  ${temp}"
             }
 			if (doorsOk) {
            		def currentTemp = sensor.latestValue("temperature")
            		def currentMode = sensor.latestValue("thermostatMode")
                 def currentHSP = sensor.latestValue("heatingSetpoint") 
                 def currentCSP = sensor.latestValue("coolingSetpoint") 
-                log.info "Thermostat data (mode: ${currentMode}, temp: ${currentTemp}, HSP: ${currentHSP}, CSP: ${currentCSP})"+
+                
+                if (debug) log.debug "Thermostat data (mode: ${currentMode}, temp: ${currentTemp}, HSP: ${currentHSP}, CSP: ${currentCSP})"+
                 		 " status: ${lastStatus}"
                 
                 if (currentTemp < setLow) {
@@ -426,6 +431,7 @@ def temperatureHandler(evt) {
                            	if (SetCoolingLow) thermostat?.setCoolingSetpoint(SetCoolingLow)
                            	thermostat?.poll()
                            	sendMessage(msg)
+                         		if (info) log.info msg
                         }
                      	else if  (currentHSP < SetHeatingLow) {
                             def msg = "Adjusting ${thermostat} setpoints because temperature is below ${setLow}"
@@ -433,6 +439,7 @@ def temperatureHandler(evt) {
                      		if (SetCoolingLow) thermostat?.setCoolingSetpoint(SetCoolingLow)
                             thermostat?.poll()
                             sendMessage(msg)
+                        		if (info) log.info msg
                         }
                     }
                 }                                     
@@ -445,26 +452,29 @@ def temperatureHandler(evt) {
                         	if (SetHeatingHigh) thermostat?.setHeatingSetpoint(SetHeatingHigh)
                         	thermostat?.setCoolingSetpoint(SetCoolingHigh)
                         	thermostat?.poll()
-                        	sendMessage(msg)                
+                        	sendMessage(msg)
+                            	if (info) log.info msg
                         }
                         else if (currentCSP > SetCoolingHigh) {
                             def msg = "Adjusting ${thermostat} setpoints because temperature is above ${setHigh}"
                     		thermostat?.setCoolingSetpoint(SetCoolingHigh)
                      		if (SetHeatingHigh) thermostat?.setHeatingSetpoint(SetHeatingHigh)
                             thermostat?.poll()
-                            sendMessage(msg)                           
+                            sendMessage(msg)   
+                            	if (info) log.info msg
                        	}
                    }     
                 }
             }
             else{
                 def delay = (turnOffDelay != null && turnOffDelay != "") ? turnOffDelay * 60 : 60
-                log.debug("Detected open doors.  Checking door states again in ${delay} seconds")
+               if(info) log.info ("Detected open doors.  Checking door states again in ${delay} seconds")
                 runIn(delay, "doorCheck")
             }
         }
-        log.trace ("Detected temperature change but all settings are ok, not taking any actions.")
+        if(info) log.info ("Detected temperature change but all settings are ok, not taking any actions.")
 	}
+    if (debug) log.debug "Temperature handler called: modeOk = $modeOk, daysOk = $daysOk, timeOk = $timeOk"
 }
 
 def modeAwayChange(evt){ 
@@ -478,12 +488,12 @@ def modeAwayChange(evt){
                     if(fanAway) thermostat.setThermostatFanMode(fanAway)
                     def msg = "Adjusting ${thermostat} mode and setpoints because Location Mode is set to Away"   
                     sendMessage(msg) 
-                    log.debug "Running AwayChange because mode is now ${away} and last staus is ${lastStatus}"
+                    if(info) log.info "Running AwayChange because mode is now ${away} and last staus is ${lastStatus}"
             }
             else  {
         			state.lastStatus = null
                     temperatureHandler()
-                    log.debug "Running Temperature Handler because Home Mode is no longer in away, and the last staus is ${lastStatus}"
+                    if(info) log.info "Running Temperature Handler because Home Mode is no longer in away, and the last staus is ${lastStatus}"
 			}
      	}
 	log.trace ("Detected temperature change while away but all settings are ok, not taking any actions.")
@@ -498,18 +508,20 @@ def modeAwayTempHandler(evt) {
                     thermostat?.poll()
                     def msg = "I changed your ${thermostat} mode to ${Awaycold} because temperature is below ${setAwayLow}"
                     sendMessage(msg)
+                    	if (info) log.info msg
   				}
 				if (currentTemp > setHigh) {
 					if(Awayhot) thermostat?."${Awayhot}"()
                     thermostat?.poll()
 					def msg = "I changed your ${thermostat} mode to ${Awayhot} because temperature is above ${setAwayHigh}"
                     sendMessage(msg)
+                    	if (info) log.info msg
   				}
              }
 			Else {
         			state.lastStatus = null
             		temperatureHandler()
-            		log.debug "Temp changed while staus is ${lastStatus} but the Location Mode is no longer in away. Resetting lastStatus"
+            		if(info) log.info "Temp changed while staus is ${lastStatus} but the Location Mode is no longer in away. Resetting lastStatus"
         	}
 	}
 }
@@ -520,28 +532,30 @@ def doorCheck(evt){
        	def disabledMode = sensor.latestValue("thermostatMode")
        	def disableHSP = sensor.latestValue("heatingSetpoint") 
         def disableCSP = sensor.latestValue("coolingSetpoint") 
-		log.info "Disable settings: ${disabledMode} mode, ${disableHSP} HSP, ${disableCSP} CSP"
+		if (info) log.info "Disable settings: ${disabledMode} mode, ${disableHSP} HSP, ${disableCSP} CSP"
     if (!doorsOk){
-		log.debug("doors still open turning off ${thermostat}")
+		if(info) log.info ("doors still open turning off ${thermostat}")
 		def msg = "I changed your ${thermostat} mode to off because some doors are open"
         if (state.lastStatus != "off"){
         	thermostat?.off()
 			sendMessage(msg)
+            	if (info) log.info msg
 		}
 		state.lastStatus = "off"
+        		if (info) log.info "Changing status to off"
 	}
-
 	else {
     	if (state.lastStatus == "off"){
 			state.lastStatus = null
 		    if (resetOff){
-                log.debug("Contact sensor(s) are now closed restoring ${thermostat} with settings: ${disabledMode} mode, ${disableHSP} HSP, ${disableCSP} CSP")
+               if(debug) log.debug("Contact sensor(s) are now closed restoring ${thermostat} with settings: ${disabledMode} mode, ${disableHSP} HSP, ${disableCSP} CSP")
                 thermostat."${disabledMode}"()             
                 thermostat.setHeatingSetpoint(disableHSP)
                 thermostat.setCoolingSetpoint(disableCSP) 		    
 	    	}
         }
         temperatureHandler()
+        	if(debug) "Calling Temperature Handler"
 	}
 }
 
@@ -550,23 +564,27 @@ private void sendText(number, message) {
         def phones = sms.split("\\;")
         for (phone in phones) {
             sendSms(phone, message)
+            
         }
     }
 }
 
 private void sendMessage(message) {
-    log.debug "sending notification:  ${message}"
+    if(info) log.info "sending notification:  ${message}"
     if (recipients) { 
-    //if (location.contactBookEnabled) {
         sendNotificationToContacts(message, recipients)
-    } //else {
+    if(debug) log.debug "sending notification:  ${recipients}"    
+    }
     if (push) {
         sendPush message
+            if(info) log.info "sending push notification"
     } else {
             sendNotificationEvent(message)
+             if(info) log.info "sending notification"
     }
     if (sms) {
         sendText(sms, message)
+        if(debug) "Calling process to send text"
     }
 }
             
@@ -577,13 +595,13 @@ private getAllOk() {
 
 private getModeOk() {
 	def result = !modes || modes.contains(location.mode)
-	//log.trace "modeOk = $result"
+		if(debug) log.debug "modeOk = $result"
 	result
 }
 
 private getDoorsOk() {
 	def result = !doors || !doors.latestValue("contact").contains("open")
-	//log.trace "doorsOk = $result"
+		if(debug) log.debug "doorsOk = $result"
 	result
 }
 
@@ -601,7 +619,7 @@ private getDaysOk() {
 		def day = df.format(new Date())
 		result = days.contains(day)
 	}
-	//log.trace "daysOk = $result"
+	if(debug) log.debug "daysOk = $result"
 	result
 }
 
@@ -621,7 +639,7 @@ private getTimeOk() {
     	result = currTime <= stop
     }
     
-	//log.trace "timeOk = $result"
+		if(debug) log.debug "timeOk = $result"
 	result
 }
 
@@ -696,7 +714,7 @@ private anyoneIsHome() {
     result = true
   }
 
-  log.debug("anyoneIsHome: ${result}")
+	 if(debug) log.debug("anyoneIsHome: ${result}")
 
   return result
 }
