@@ -536,7 +536,7 @@ def doorCheck(evt){
        	state.disabledMode = sensor.latestValue("thermostatMode")
        	state.disableHSP = sensor.latestValue("heatingSetpoint") 
         state.disableCSP = sensor.latestValue("coolingSetpoint") 
-		if (info) log.info "Disable settings: ${state.disabledMode} mode, ${state.disableHSP} HSP, ${state.disableCSP} CSP"
+		if (debug) log.debug "Disable settings: ${state.disabledMode} mode, ${state.disableHSP} HSP, ${state.disableCSP} CSP"
     if (!doorsOk){
 		if(info) log.info ("doors still open turning off ${thermostat}")
 		def msg = "I changed your ${thermostat} mode to off because some doors are open"
