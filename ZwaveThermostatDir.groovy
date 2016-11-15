@@ -400,6 +400,10 @@ def init(){
     if(doors){
             subscribe(doors, "contact.open", temperatureHandler)
             subscribe(doors, "contact.closed", doorCheck)
+            state.disabledTemp = null
+    		state.disabledMode = null
+    		state.disableHSP = null 
+    		state.disableCSP = null
 	}
 }
 
@@ -496,7 +500,7 @@ def modeAwayChange(evt){
                     if(info) log.info "Running Temperature Handler because Home Mode is no longer in away, and the last staus is ${lastStatus}"
 			}
      	}
-	log.trace ("Detected temperature change while away but all settings are ok, not taking any actions.")
+	if(info) log.info ("Detected temperature change while away but all settings are ok, not taking any actions.")
     }
 }
 
@@ -528,11 +532,11 @@ def modeAwayTempHandler(evt) {
 
 def doorCheck(evt){
     	
-        def disabledTemp = sensor.latestValue("temperature")
-       	def disabledMode = sensor.latestValue("thermostatMode")
-       	def disableHSP = sensor.latestValue("heatingSetpoint") 
-        def disableCSP = sensor.latestValue("coolingSetpoint") 
-		if (info) log.info "Disable settings: ${disabledMode} mode, ${disableHSP} HSP, ${disableCSP} CSP"
+        state.disabledTemp = sensor.latestValue("temperature")
+       	state.disabledMode = sensor.latestValue("thermostatMode")
+       	state.disableHSP = sensor.latestValue("heatingSetpoint") 
+        state.disableCSP = sensor.latestValue("coolingSetpoint") 
+		if (info) log.info "Disable settings: ${state.disabledMode} mode, ${state.disableHSP} HSP, ${state.disableCSP} CSP"
     if (!doorsOk){
 		if(info) log.info ("doors still open turning off ${thermostat}")
 		def msg = "I changed your ${thermostat} mode to off because some doors are open"
@@ -548,10 +552,11 @@ def doorCheck(evt){
     	if (state.lastStatus == "off"){
 			state.lastStatus = null
 		    if (resetOff){
-               if(debug) log.debug("Contact sensor(s) are now closed restoring ${thermostat} with settings: ${disabledMode} mode, ${disableHSP} HSP, ${disableCSP} CSP")
-                thermostat."${disabledMode}"()             
-                thermostat.setHeatingSetpoint(disableHSP)
-                thermostat.setCoolingSetpoint(disableCSP) 		    
+               if(debug) log.debug "Contact sensor(s) are now closed restoring ${thermostat} with settings: ${state.disabledMode} mode"+
+               ", ${state.disableHSP} HSP, ${state.disableCSP} CSP"
+                thermostat."${state.disabledMode}"()             
+                thermostat.setHeatingSetpoint(state.disableHSP)
+                thermostat.setCoolingSetpoint(state.disableCSP) 		    
 	    	}
         }
         temperatureHandler()
