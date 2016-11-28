@@ -68,8 +68,8 @@ def TemperatureSettings() {
     def sensor = [
         name:       "sensor",
         type:       "capability.temperatureMeasurement",
-        title:      "Which Temperature Sensor?",
-        multiple:   false,
+        title:      "Which Temperature Sensor(s)?",
+        multiple:   true,
         required:   true
     ]
     def thermostat = [
@@ -153,7 +153,7 @@ def TemperatureSettings() {
         section("Select the temperature sensor that will control your thermostat"){
 			input sensor
 		}
-		section("When the temperature falls below this temperature..."){
+		section("When the temperature falls below this temperature (Low Temperature)..."){
 			input setLow
 		}
         section("Adjust the thermostat to the following settings:"){
@@ -161,14 +161,17 @@ def TemperatureSettings() {
             input SetHeatingLow
             input SetCoolingLow
 		}
-        section("When the temperature raises above this temperature..."){
+        section("When the temperature raises above this temperature (High Temperature)..."){
 			input setHigh
 		}
         section("Adjust the thermostat to the following settings:"){
 			input hot
             input SetCoolingHigh
             input SetHeatingHigh
-		}        
+		}
+        section("When temperature is neutral (between above Low and High Temperatures..."){
+			input "neutral", "bool", title: "Turn off the thermostat", required: false, defaultValue: false
+		}
     }  
 }
 
@@ -417,16 +420,18 @@ def temperatureHandler(evt) {
                 if(info) log.info "Detected ${setLow} >  ${setHigh}. Auto-adjusting setting to  ${temp}"
             }
 			if (doorsOk) {
-           		def currentTemp = sensor.latestValue("temperature")
-           		def currentMode = sensor.latestValue("thermostatMode")
-                def currentHSP = sensor.latestValue("heatingSetpoint") 
-                def currentCSP = sensor.latestValue("coolingSetpoint") 
-                
-                if (debug) log.debug "Thermostat data (mode: ${currentMode}, temp: ${currentTemp}, HSP: ${currentHSP}, CSP: ${currentCSP})"+
+           		def currentTemp = thermostat.latestValue("temperature")
+           		def currentMode = thermostat.latestValue("thermostatMode")
+                def currentHSP = thermostat.latestValue("heatingSetpoint") 
+                def currentCSP = thermostat.latestValue("coolingSetpoint") 
+                def sensors = sensor.size()
+				def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
+                if(info) log.info "Current temperature at the thermostat is ${currentTemp} and the average at the ${sensors} sensors selected is: ${tempAVG}"
+                if (debug) log.debug "Thermostat data (mode: ${currentMode}, curr temp: ${currentTemp}, avg temp:${tempAVG}, HSP: ${currentHSP}, CSP: ${currentCSP})"+
                 		 " status: ${lastStatus}"
                 
                 if (currentTemp < setLow) {
-                    if (state.lastStatus == "one" || state.lastStatus == "two" || state.lastStatus == null){
+                    if (state.lastStatus == "one" || state.lastStatus == "two" || state.lastStatus == "three" || state.lastStatus == null){
                         state.lastStatus = "one" 
                          if (currentMode == "cool" || currentMode == "off") {
                      		def msg = "Adjusting ${thermostat} operating mode and setpoints because temperature is below ${setLow}"
@@ -448,7 +453,7 @@ def temperatureHandler(evt) {
                     }
                 }                                     
                 if (currentTemp > setHigh) {
-                    if (state.lastStatus == "one" || state.lastStatus == "two" || state.lastStatus == null){
+                    if (state.lastStatus == "one" || state.lastStatus == "two" || state.lastStatus == "three" || state.lastStatus == null){
                         state.lastStatus = "two"
 						if (currentMode == "heat" || currentMode == "off") {
                             def msg = "Adjusting ${thermostat} operating mode and setpoints because temperature is above ${setHigh}"
@@ -468,17 +473,29 @@ def temperatureHandler(evt) {
                             	if (info) log.info msg
                        	}
                    }     
+                }    
+                if (currentTemp > setLow && currentTemp < setHigh) {
+                        if (neutral == true) {
+                            if (debug) log.debug "Neutral is ${neutral}, current temp is: ${currentTemp}"
+                            if (state.lastStatus == "two" || state.lastStatus == "one" || state.lastStatus == null){
+                                def msg = "Adjusting ${thermostat} mode to off because temperature is neutral"
+                                    thermostat?.off()
+                                    sendMessage(msg)
+                                        if (info) log.info msg
+                            }
+                            state.lastStatus = "three"
+                        }
                 }
             }
             else{
                 def delay = (turnOffDelay != null && turnOffDelay != "") ? turnOffDelay * 60 : 60
-               if(info) log.info ("Detected open doors.  Checking door states again in ${delay} seconds")
+               		if(info) log.info ("Detected open doors.  Checking door states again in ${delay} seconds")
                 runIn(delay, "doorCheck")
             }
         }
         if(info) log.info ("Detected temperature change but all settings are ok, not taking any actions.")
 	}
-    if (debug) log.debug "Temperature handler called: modeOk = $modeOk, daysOk = $daysOk, timeOk = $timeOk"
+    	if (debug) log.debug "Temperature handler called: modeOk = $modeOk, daysOk = $daysOk, timeOk = $timeOk"
 }
 
 def modeAwayChange(evt){ 
@@ -505,7 +522,11 @@ def modeAwayChange(evt){
 }
 
 def modeAwayTempHandler(evt) {
-		if(lastStatus == "away"){
+	def tempAVGaway = sensor ? getAverage(sensor, "temperature") : "undefined device"
+	def currentAwayTemp = thermostat.latestValue("temperature")
+		if(info) log.info "Away: your average room temperature is:  ${tempAVGaway}, current temp is  ${currentAwayTemp}"
+		currentAwayTemp = tempAVGaway		
+        if(lastStatus == "away"){
         	if(modes2.contains(location.mode)){
            		if (currentTemp < setAwayLow) {
 					if(Awaycold) thermostat?."${Awaycold}"()
@@ -522,7 +543,7 @@ def modeAwayTempHandler(evt) {
                     	if (info) log.info msg
   				}
              }
-			Else {
+			else {
         			state.lastStatus = null
             		temperatureHandler()
             		if(info) log.info "Temp changed while staus is ${lastStatus} but the Location Mode is no longer in away. Resetting lastStatus"
@@ -533,9 +554,9 @@ def modeAwayTempHandler(evt) {
 def doorCheck(evt){
     	
         state.disabledTemp = sensor.latestValue("temperature")
-       	state.disabledMode = sensor.latestValue("thermostatMode")
-       	state.disableHSP = sensor.latestValue("heatingSetpoint") 
-        state.disableCSP = sensor.latestValue("coolingSetpoint") 
+       	state.disabledMode = thermostat.latestValue("thermostatMode")
+       	state.disableHSP = thermostat.latestValue("heatingSetpoint") 
+        state.disableCSP = thermostat.latestValue("coolingSetpoint") 
 		if (debug) log.debug "Disable settings: ${state.disabledMode} mode, ${state.disableHSP} HSP, ${state.disableCSP} CSP"
     if (!doorsOk){
 		if(info) log.info ("doors still open turning off ${thermostat}")
@@ -562,6 +583,13 @@ def doorCheck(evt){
         temperatureHandler()
         	if(debug) "Calling Temperature Handler"
 	}
+}
+
+private getAverage(device,type){
+	def total = 0
+	if(debug) log.debug "calculating average temperature"  
+    device.each {total += it.latestValue(type)}
+    return Math.round(total/device.size())
 }
 
 private void sendText(number, message) {
