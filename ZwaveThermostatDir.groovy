@@ -431,10 +431,11 @@ def temperatureHandler(evt) {
     if(modeOk && daysOk && timeOk && modeNotAwayOk)  {
     		
             if(sensor){
-            	def sensors = sensor.size()
-            	def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
-            	currentTemp = tempAVG
-            	if (debug) log.debug "Data check (avg temp: ${currentTemp}, num of sensors:${sensors}, app status: ${lastStatus})"
+            	//def sensors = sensor.size()
+            	//def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
+            	//currentTemp = tempAVG
+            	currentTemp = sensor.latestValue("temperature")
+		 if (debug) log.debug "Data check (avg temp: ${currentTemp}, num of sensors:${sensors}, app status: ${lastStatus})"
             }
             else {
             	currentTemp = thermostat.latestValue("temperature")
