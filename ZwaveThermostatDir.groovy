@@ -428,10 +428,8 @@ def init(){
 def temperatureHandler(evt) {
     
     def currentTemp
-    
-    if(modeOk && daysOk && timeOk)  {
-       	if (!modes2.contains(location.mode)){
-            
+    if(modeOk && daysOk && timeOk && modeNotAwayOk)  {
+    		
             if(sensor){
             	def sensors = sensor.size()
             	def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
@@ -441,15 +439,13 @@ def temperatureHandler(evt) {
             else {
             	currentTemp = thermostat.latestValue("temperature")
                  if (debug) log.debug "Thermostat data (curr temp: ${currentTemp},status: ${lastStatus}"
-            }
-           
+            }        
             if(setLow > setHigh){
                 def temp = setLow
                 	setLow = setHigh
                 	setHigh = temp
                 if(info) log.info "Detected ${setLow} >  ${setHigh}. Auto-adjusting setting to  ${temp}"
-            }
-			           
+            }         
             if (doorsOk) {
            		def currentMode = thermostat.latestValue("thermostatMode")
                 def currentHSP = thermostat.latestValue("heatingSetpoint") 
@@ -507,7 +503,8 @@ def temperatureHandler(evt) {
                             if (state.lastStatus == "two" || state.lastStatus == "one" || state.lastStatus == null){
                                 def msg = "Adjusting ${thermostat} mode to off because temperature is neutral"
                                     thermostat?.off()
-                                    sendMessage(msg)
+                                    thermostat?.poll()
+									sendMessage(msg)
                                     state.lastStatus = "three"
                                         if (info) log.info msg
                                         if (debug) log.debug "Data check neutral(neutral is:${neutral}, currTemp: ${currentTemp}, setLow: ${setLow}, setHigh: ${setHigh})"
@@ -521,10 +518,8 @@ def temperatureHandler(evt) {
                		if(info) log.info ("Detected open doors.  Checking door states again in ${delay} seconds")
                 runIn(delay, "doorCheck")
             }
-        }
-        if(info) log.info ("Detected temperature change but all settings are ok, not taking any actions.")
 	}
-    	if (debug) log.debug "Temperature handler called: modeOk = $modeOk, daysOk = $daysOk, timeOk = $timeOk"
+    	if (debug) log.debug "Temperature handler called: modeOk = $modeOk, daysOk = $daysOk, timeOk = $timeOk, modeNotAwayOk = $modeNotAwayOk "
 }
 
 def modeAwayChange(evt){ 
@@ -553,18 +548,19 @@ def modeAwayChange(evt){
 def modeAwayTempHandler(evt) {
 	def tempAVGaway = sensor ? getAverage(sensor, "temperature") : "undefined device"
 	def currentAwayTemp = thermostat.latestValue("temperature")
-		if(info) log.info "Away: your average room temperature is:  ${tempAVGaway}, current temp is  ${currentAwayTemp}"
+	
+    	if(info) log.info "Away: your average room temperature is:  ${tempAVGaway}, current temp is  ${currentAwayTemp}"
 		if (sensor) currentAwayTemp = tempAVGaway		
         if(lastStatus == "away"){
         	if(modes2.contains(location.mode)){
-           		if (currentTemp < setAwayLow) {
+           		if (currentAwayTemp < setAwayLow) {
 					if(Awaycold) thermostat?."${Awaycold}"()
                     thermostat?.poll()
                     def msg = "I changed your ${thermostat} mode to ${Awaycold} because temperature is below ${setAwayLow}"
                     sendMessage(msg)
                     	if (info) log.info msg
   				}
-				if (currentTemp > setHigh) {
+				if (currentAwayTemp > setHigh) {
 					if(Awayhot) thermostat?."${Awayhot}"()
                     thermostat?.poll()
 					def msg = "I changed your ${thermostat} mode to ${Awayhot} because temperature is above ${setAwayHigh}"
@@ -651,12 +647,18 @@ private void sendMessage(message) {
             
 
 private getAllOk() {
-	modeOk && daysOk && timeOk && doorsOk
+	modeOk && daysOk && timeOk && doorsOk && modeNotAwayOk
 }
 
 private getModeOk() {
 	def result = !modes || modes.contains(location.mode)
 		if(debug) log.debug "modeOk = $result"
+	result
+}
+
+private getModeNotAwayOk() {
+	def result = !modes2 || !modes2.contains(location.mode)
+		if(debug) log.debug "modeNotAwayOk = $result"
 	result
 }
 
