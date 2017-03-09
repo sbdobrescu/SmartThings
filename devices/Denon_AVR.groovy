@@ -112,14 +112,14 @@ preferences {
             
 			}
         standardTile("input7", "device.game", width: 2, height: 2, decoration: "flat"){
-        	state "OFF", label: 'Game', action: "game", icon:"st.Entertainment.entertainment2", backgroundColor: "#FFFFFF",nextState:"ON"   
-            state "ON", label: 'Game', action: "game", icon:"st.Entertainment.entertainment2", backgroundColor: "#53a7c0", nextState:"OFF"   
+        	state "OFF", label: 'Game', action: "game", icon:"st.Electronics.electronics5", backgroundColor: "#FFFFFF",nextState:"ON"   
+            state "ON", label: 'Game', action: "game", icon:"st.Electronics.electronics5", backgroundColor: "#53a7c0", nextState:"OFF"   
             
 			}               
 		standardTile("input10", "device.sound", width: 2, height: 2, decoration: "flat"){
-        	state "sMusic", label: '${currentValue}', action:"sMusic", icon:"st.Office.office12", backgroundColor: "#FFFFFF", nextState:"sMovie"
-			state "sMovie", label: '${currentValue}', action:"sMovie", icon:"st.Office.office12", backgroundColor: "#FFFFFF", nextState:"sPure"
-			state "sPure", label: '${currentValue}', action:"sPure", icon:"st.Office.office12", backgroundColor: "#FFFFFF", nextState:"sMusic"
+        	state "sMusic", label: '${currentValue}', action:"sMusic", icon:"st.Entertainment.entertainment3", backgroundColor: "#FFFFFF", nextState:"sMovie"
+			state "sMovie", label: '${currentValue}', action:"sMovie", icon:"st.Entertainment.entertainment9", backgroundColor: "#FFFFFF", nextState:"sPure"
+			state "sPure", label: '${currentValue}', action:"sPure", icon:"st.Entertainment.entertainment15", backgroundColor: "#FFFFFF", nextState:"sMusic"
             }            
 
 main "multiAVR"
@@ -345,4 +345,3 @@ private String convertPortToHex(port) {
 	String hexport = port.toString().format( '%04X', port.toInteger() )
     return hexport
 }
-
