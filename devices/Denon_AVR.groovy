@@ -5,11 +5,6 @@
  *		Tested with AVR-S710W (game1 & game2 inputs are not available), AVR 1912
  */
 
-preferences {
-    input("destIp", "text", title: "IP", description: "The device IP")
-    input("destPort", "number", title: "Port", description: "The port you wish to connect", defaultValue: 80)
-//    input("CBL", "text", title: "Set input name for SAT/CBL", description: "Set input for SAT/CBL", defaultValue: "SAT/CBL", required: false)
-}
 
 metadata {
     definition (name: "Denon AVR", namespace: "SB", 
@@ -21,8 +16,16 @@ metadata {
         capability "Music Player" 
         
         attribute "mute", "string"
-        attribute "input", "string"
-		attribute "inputChan", "enum"     
+        attribute "input", "string"     
+        attribute "cbl", "string"
+        attribute "tv", "string"
+		attribute "dvd", "string"
+		attribute "mp", "string"
+		attribute "bt", "string"
+		attribute "game", "string"
+		attribute "sMovie", "string"        
+		attribute "sMusic", "string"          
+		attribute "sPure", "string"        
         
         command "mute"
         command "unmute"
@@ -31,13 +34,22 @@ metadata {
         command "inputNext"
 		command "cbl"
 		command "tv"
-		command "BD"
-		command "DVD"
-		command "MP"
-		command "BT"
-		command "G1"
-		command "G2"    
+		command "bd"
+		command "dvd"
+		command "mp"
+		command "bt"
+		command "game"
+		command "sMovie"
+		command "sMusic"
+		command "sPure"
         }
+
+
+preferences {
+    input("destIp", "text", title: "IP", description: "The device IP")
+    input("destPort", "number", title: "Port", description: "The port you wish to connect", defaultValue: 80)
+}
+
 
     simulator {
         // TODO-: define status and reply messages here
@@ -61,40 +73,57 @@ metadata {
             	attributeState("unmuted", action:"mute", nextState: "muted")
             	attributeState("muted", action:"unmute", nextState: "unmuted")
         	}
-            tileAttribute("device.input", key: "MARQUEE") {
-            	attributeState ("default", label:'${currentValue}', defaultState: true)
-        	}
+            //tileAttribute("device.input", key: "MARQUEE") {
+            //	attributeState ("default", label:'${currentValue}', defaultState: true)
+        	//}
         }        
 		standardTile("poll", "device.poll", width: 2, height: 2, decoration: "flat") {
             state "poll", label: "", action: "polling.poll", icon: "st.secondary.refresh", backgroundColor: "#FFFFFF"
         }
-        standardTile("CBL", "device.switch", width: 2, height: 2, decoration: "flat"){
-            state "Cable ON", label: 'Cable', action: "cbl", icon:"st.Electronics.electronics3" , backgroundColor: "#53a7c0"         
-            state "Cable", label: 'Cable', action: "cbl", icon:"st.Electronics.electronics3" , backgroundColor: "#79b821"         
+        standardTile("input1", "device.cbl", width: 2, height: 2, decoration: "flat"){     
+            state "OFF", label: 'Cable', action: "cbl", icon:"st.Electronics.electronics3", backgroundColor: "#FFFFFF", nextState:"ON"
+            state "ON", label: 'Cable', action: "cbl", icon:"st.Electronics.electronics3" , backgroundColor: "#53a7c0", nextState:"OFF"        
+                     
         	
             }
-        standardTile("TV", "device.switch", width: 2, height: 2, decoration: "flat"){
-        	state "TV", label: 'TV', action: "tv", icon:"st.Electronics.electronics18"
+        standardTile("input2", "device.tv", width: 2, height: 2, decoration: "flat"){
+        	 state "OFF", label: 'TV', action: "tv", icon:"st.Electronics.electronics18", backgroundColor:"#FFFFFF",nextState:"ON" 
+             state "ON", label: 'TV', action: "tv", icon:"st.Electronics.electronics18", backgroundColor: "#53a7c0", nextState:"OFF"      
+                
             }
-        standardTile("BD", "device.switch", width: 2, height: 2, decoration: "flat"){
-        	state "BD", label: 'Blu-ray', action: "BD", icon:"st.Electronics.electronics8"
+        standardTile("input3", "device.bd", width: 2, height: 2, decoration: "flat"){
+        	state "OFF", label: 'Blu-ray', action: "bd", icon:"st.Electronics.electronics8", backgroundColor: "#FFFFFF",nextState:"ON"  
+            state "ON", label: 'Blu-ray', action: "bd", icon:"st.Electronics.electronics8", backgroundColor: "#53a7c0", nextState:"OFF"  
+            
         	}
-        standardTile("DVD", "device.switch", width: 2, height: 2, decoration: "flat"){
-        	state "DVD", label: 'Chromecast', action: "DVD", icon:"st.Electronics.electronics14"
+        standardTile("input4", "device.dvd", width: 2, height: 2, decoration: "flat"){
+        	state "OFF", label: 'Chromecast', action: "dvd", icon:"st.Electronics.electronics14", backgroundColor: "#FFFFFF",nextState:"ON"   
+            state "ON", label: 'Chromecast', action: "dvd", icon:"st.Electronics.electronics14", backgroundColor: "#53a7c0", nextState:"OFF"  
+             
         	}
-		standardTile("MP", "device.switch", width: 2, height: 2, decoration: "flat"){
-        	state "Media Player", label: 'Amazon TV', action: "MP", backgroundColor: "#ffffff", icon:"st.Electronics.electronics9"
+		standardTile("input5", "device.mp", width: 2, height: 2, decoration: "flat"){
+        	state "OFF", label: 'Amazon TV', action: "mp", icon:"st.Electronics.electronics9", backgroundColor: "#FFFFFF",nextState:"ON"   
+            state "ON", label: 'Amazon TV', action: "mp", icon:"st.Electronics.electronics9", backgroundColor: "#53a7c0", nextState:"OFF"   
+            
 			}
-        standardTile("BT", "device.switch", width: 2, height: 2, decoration: "flat"){
-        	state "BT", label: 'Bluetooth', action: "BT", icon:"st.Entertainment.entertainment2"
+        standardTile("input6", "device.bt", width: 2, height: 2, decoration: "flat"){
+        	state "OFF", label: 'Bluetooth', action: "bt", icon:"st.Entertainment.entertainment2", backgroundColor: "#FFFFFF",nextState:"ON"   
+            state "ON", label: 'Bluetooth', action: "bt", icon:"st.Entertainment.entertainment2", backgroundColor: "#53a7c0", nextState:"OFF"   
+            
 			}
-		standardTile("sMode", "device.switch", width: 4, height: 2, decoration: "flat"){
-        	state "sMusic", label: 'Music', action:"sMusic", icon:"st.Office.office12"
-        	state "sMovie", label: 'Movie', action:"sMovie", icon:"st.Office.office12"
-            }       
+        standardTile("input7", "device.game", width: 2, height: 2, decoration: "flat"){
+        	state "OFF", label: 'Game', action: "game", icon:"st.Entertainment.entertainment2", backgroundColor: "#FFFFFF",nextState:"ON"   
+            state "ON", label: 'Game', action: "game", icon:"st.Entertainment.entertainment2", backgroundColor: "#53a7c0", nextState:"OFF"   
+            
+			}               
+		standardTile("input10", "device.sound", width: 2, height: 2, decoration: "flat"){
+        	state "sMusic", label: '${currentValue}', action:"sMusic", icon:"st.Office.office12", backgroundColor: "#FFFFFF", nextState:"sMovie"
+			state "sMovie", label: '${currentValue}', action:"sMovie", icon:"st.Office.office12", backgroundColor: "#FFFFFF", nextState:"sPure"
+			state "sPure", label: '${currentValue}', action:"sPure", icon:"st.Office.office12", backgroundColor: "#FFFFFF", nextState:"sMusic"
+            }            
 
 main "multiAVR"
-        details(["multiAVR", "CBL", "TV", "BD","DVD", "MP", "BT","sMode","poll"])
+        details(["multiAVR", "input1", "input2", "input3","input4", "input5", "input6","input7", "input10", "poll"])
     }
 }
 def parse(String description) {
@@ -111,9 +140,9 @@ def parse(String description) {
 	def power = statusrsp.Power.value.text()
 
 	if(power == "ON") { 
-    	sendEvent(name: "status", value: 'playing') 
+    	sendEvent(name: "status", value: 'playing')
     }
-    if(power != "" && power != "ON") { 
+    if(power != "" && power != "ON") {  
     	sendEvent(name: "status", value: 'paused')
 	}
     
@@ -129,7 +158,8 @@ def parse(String description) {
             sendEvent(name: "input", value: inputCanonical)
 	        log.debug "Current Input is: ${inputCanonical}"
     
-    def inputSurr = statusrsp.selectSurround.value.text() //Not used
+    def inputSurr = statusrsp.selectSurround.value.text()
+    		sendEvent(name: "sound", value: inputSurr)
 	        log.debug "Current Surround is: ${inputSurr}"
 
     if(statusrsp.MasterVolume.value.text()) { 
@@ -152,7 +182,7 @@ def parse(String description) {
     } 
 }
 
-
+//BUTTON ACTIONS
 def setLevel(val) {
 	sendEvent(name: "mute", value: "unmuted")     
     sendEvent(name: "level", value: val)
@@ -184,63 +214,93 @@ def toggleMute(){
     if(device.currentValue("mute") == "muted") { unmute() }
 	else { mute() }
 }
-
 def cbl() {
-	def cbl = "SAT/CBL"
-    log.debug "Setting input to '${cbl}'"
-    request("cmd0=PutZone_InputFunction%2FSAT/CBL")
-    
+	def cmd = "SAT/CBL"
+    log.debug "Setting input to ${cmd}"
+	syncTiles(cmd)
+    request("cmd0=PutZone_InputFunction%2F" +cmd)
 	}
-
-
 def tv() {
-    log.debug "Setting input to TV Audio"
-    request("cmd0=PutZone_InputFunction%2FTV")
+	def cmd = "TV"
+    log.debug "Setting input to ${cmd}"
+	syncTiles(cmd)   
+    request("cmd0=PutZone_InputFunction%2F"+cmd)
     }
 
-def BD() {
-	log.debug "Setting input to Blu-ray"
-    request("cmd0=PutZone_InputFunction%2FBD")
+def bd() {
+	def cmd = "BD"
+    log.debug "Setting input to ${cmd}"
+    syncTiles(cmd)
+    request("cmd0=PutZone_InputFunction%2F"+cmd)
+    }
+
+def dvd() {
+	def cmd = "DVD"
+    log.debug "Setting input to ${cmd}"
+	syncTiles(cmd)
+    request("cmd0=PutZone_InputFunction%2F"+cmd)
+    }
+
+def mp() {
+	def cmd = "MPLAY"
+    log.debug "Setting input to '${cmd}'"
+    syncTiles(cmd)
+    request("cmd0=PutZone_InputFunction%2F"+cmd)
 	}
 
-def DVD() {
-	log.debug "Setting input to Blu-ray"
-    request("cmd0=PutZone_InputFunction%2FDVD")
-	}
-
-def MP() {
-	log.debug "Setting input to Media Player"
-    request("cmd0=PutZone_InputFunction%2FMPLAY")
-
-	}
-
-def BT() {
-	log.debug "Setting input to Bluetooth"
-    request("cmd0=PutZone_InputFunction%2FBT")
+def bt() {
+	def cmd = "BT"
+    log.debug "Setting input to '${cmd}'"
+    syncTiles(cmd)
+    request("cmd0=PutZone_InputFunction%2F"+cmd)
 }
 	
-def sGame() {
-	log.debug "Setting surround to GAME"
-    request("cmd0=PutZone_InputFunction%2FGAME")
+def game() {
+	def cmd = "GAME"
+    log.debug "Setting input to '${cmd}'" 
+    syncTiles(cmd)
+    request("cmd0=PutZone_InputFunction%2F"+cmd)
 }
 def sMusic() {
-	log.debug "Setting surround to Music"	
-    request("cmd0=PutSurroundMode%2F$MUSIC")
+	def cmd = "MUSIC"
+    log.debug "Setting input to '${cmd}'"
+    request("cmd0=PutSurroundMode%2F"+cmd)
+
 }
 
 def sMovie() { 
-	log.debug "Setting surround to Movie"
-request("cmd0=PutSurroundMode%2F$MOVIE")
+	def cmd = "MOVIE"
+    log.debug "Setting input to '${cmd}'"
+    request("cmd0=PutSurroundMode%2F"+cmd)
 }
 
 def sPure() {
-	log.debug "Setting surround to Pure"
-    request("cmd0=PutZone_InputFunction%2FPURE DIRECT")
+	def cmd = "PURE DIRECT"
+    log.debug "Setting input to '${cmd}'"
+    request("cmd0=PutZone_InputFunction%2F"+cmd)
 }
 
 def poll() { 
 	//log.debug "Polling requested"
     refresh()
+}
+
+def syncTiles(cmd){
+	if (cmd == "SAT/CBL") sendEvent(name: "cbl", value: "ON")	 
+   		else sendEvent(name: "cbl", value: "OFF")						
+	if (cmd == "TV") sendEvent(name: "tv", value: "ON")	 
+   		else sendEvent(name: "tv", value: "OFF")						
+	if (cmd == "BD") sendEvent(name: "bd", value: "ON")	 
+   		else sendEvent(name: "bd", value: "OFF")						
+	if (cmd == "DVD") sendEvent(name: "dvd", value: "ON")	 
+   		else sendEvent(name: "dvd", value: "OFF")						
+	if (cmd == "MPLAY") sendEvent(name: "mp", value: "ON")	 
+   		else sendEvent(name: "mp", value: "OFF")						
+	if (cmd == "BT") sendEvent(name: "bt", value: "ON")	 
+   		else sendEvent(name: "bt", value: "OFF")						
+	if (cmd == "GAME") sendEvent(name: "game", value: "ON")	 
+   		else sendEvent(name: "game", value: "OFF")
+
 }
 
 def refresh() {
@@ -285,3 +345,4 @@ private String convertPortToHex(port) {
 	String hexport = port.toString().format( '%04X', port.toInteger() )
     return hexport
 }
+
