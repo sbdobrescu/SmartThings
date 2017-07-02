@@ -23,6 +23,8 @@ metadata {
         capability "Sensor"
         capability "Carbon Dioxide Measurement"
         capability "Sound Pressure Level"
+    	capability "Refresh"
+
 
 		attribute "pressure", "number"
         attribute "min_temp", "number"
@@ -96,11 +98,14 @@ metadata {
         valueTile("units", "units", width: 2, height: 1, inactiveLabel: false) {
  			state "default", label:'${currentValue}' 
         }
-        valueTile("units", "units", width: 2, height: 1, inactiveLabel: false) {
- 			state "default", label:'${currentValue}'             
- 		}        
+        valueTile("lastupdate", "lastupdate", width: 4, height: 1, inactiveLabel: false) {
+ 			state "default", label:"Last updated: " + '${currentValue}'             
+ 		} 
+        valueTile("refresh", "device.refresh", width: 2, height: 1, inactiveLabel: false) {
+ 			state "default", label:'Refresh', action:"refresh", icon:"st.secondary.refresh-icon"           
+ 		}   
  		main(["main"]) // IOS users! If you want color with the temperature in the "Things" overview, replace "main" with "temperature"
- 		details(["main", "min_temp", "max_temp", "carbonDioxide", "temp_trend", "pressure", "units", "pressure_trend", "soundPressureLevel", "lastupdate"])
+ 		details(["main", "min_temp", "max_temp", "carbonDioxide", "temp_trend", "pressure", "units", "pressure_trend", "soundPressureLevel", "lastupdate", "refresh"])
 	}
 }
 
@@ -112,5 +117,9 @@ def parse(String description) {
 }
 
 def poll() {
+	parent.poll()
+}
+
+def refresh() {
 	parent.poll()
 }
