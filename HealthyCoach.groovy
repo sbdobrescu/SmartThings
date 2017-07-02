@@ -505,14 +505,9 @@ def poll() {
 }
 
 def lastUpdated(time) {
-def stamp = new Date(time).format("h:mm aa", location.timeZone) 
-	log.debug "timeForm = $stamp"
-    
-    String date = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm:ss").format(new java.util.Date (time*1000));
-    log.debug "date = $date"
-    log.debug "stamp = $stamp"
-	state.lastUpdated = stamp
-    return stamp
+	def updtTime = new Date(time*1000L).format("h:mm aa", location.timeZone)
+	state.lastUpdated = updtTime
+	return updtTime
 }
 
 def cToPref(temp) {
