@@ -108,7 +108,7 @@ private execRoutine(armMode) {
 def codeEntryHandler(evt){
 	//do stuff
     log.debug "Caught code entry event! ${evt.value.value}"
-    
+    log.warn "keypad data ${evt.value}"
     def codeEntered = evt.value as String
     def correctCode = getPIN("security")
     def data = evt.data as String
@@ -128,11 +128,13 @@ def codeEntryHandler(evt){
         keypad.acknowledgeArmRequest(data)
         sendSHMEvent(armMode)
 		execRoutine(armMode)
+        
     }
     else {
     	log.debug "Checking Control PIN"
 		correctCode = getPIN("control")	
 		if (codeEntered == correctCode) {
+            keypad.sendInvalidKeycodeResponse()
     		log.debug "Correct control PIN entered. Toggle switches"
             if (sSwitches) {
                 if (sSwitches?.currentValue('switch').contains('on')) {
@@ -145,6 +147,7 @@ def codeEntryHandler(evt){
     	}
         else {
         	if(codeEntered == "0000") {
+            keypad.sendInvalidKeycodeResponse()
     		log.debug "On button code entered. Toggle switches"
                 if (onButton) {
                     if (onButton?.currentValue('switch').contains('on')) {
